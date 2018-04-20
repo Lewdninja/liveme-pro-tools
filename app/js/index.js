@@ -556,7 +556,10 @@ function _checkBookmark(uid) {
 						break;
 					}
                 }
-            });
+            })
+            .catch(error => {
+                console.log(error)
+            })
         }
 
     });
@@ -806,7 +809,10 @@ function getUsersReplays() {
                 hideProgressBar();
             }
 
-        });
+        })
+        .catch(error => {
+            console.log(error)
+        })
 
 }
 
@@ -925,6 +931,9 @@ function performUsernameSearch() {
 
 
 function initSettingsPanel() {
+    $('#authEmail').val(appSettings.get('auth.email'))
+    $('#authPassword').val(appSettings.get('auth.password'))
+
     $('#viewmode-followers').prop('checked', appSettings.get('general.hide_zeroreplay_fans'));
     $('#viewmode-followings').prop('checked', appSettings.get('general.hide_zeroreplay_followings'));
 
@@ -950,6 +959,10 @@ function initSettingsPanel() {
 }
 
 function saveSettings() {
+
+    LiveMe.setAuthDetails($('#authEmail').val().trim(), $('#authPassword').val().trim())
+    appSettings.set('auth.email', $('#authEmail').val().trim())
+    appSettings.set('auth.password', $('#authPassword').val().trim())
 
     appSettings.set('general.hide_zeroreplay_fans', ($('#viewmode-followers').is(':checked') ? true : false) )
     appSettings.set('general.hide_zeroreplay_followings', ($('#viewmode-followings').is(':checked') ? true : false) )

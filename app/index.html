@@ -97,6 +97,16 @@
             <div class="area">
                 <div class="section">
                     <ul>
+                        <li style="padding-bottom: 5px;"><h4>Authentication</h4></li>
+                        <li style="padding-bottom: 20px;">
+                            Email and password are required to see user replays.<br>
+                            <input type="text" id="authEmail" placeholder="user@example.com" style="width: 100%;margin-bottom:5px;" onBlur="saveSettings()"><br>
+                            <input type="password" id="authPassword" placeholder="Password" style="width: 100%;" onBlur="saveSettings()"><br>
+                        </li>
+                    </ul>
+                </div>
+                <div class="section">
+                    <ul>
                         <li style="padding-bottom: 5px;"><h4>Video Player</h4></li>
                         <li style="padding-bottom: 20px;">
                             Internal player is used by default unless you specify one in the field below.<br>
