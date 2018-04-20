@@ -1,5 +1,5 @@
 # LiveMe Pro Tools
-This version is modified to work with the latest authentication update.
+This version is modified to work with the latest authentication update. **You have to enter your login details under Settings to see replays!**
 
 ## Downloads
 You can either clone this repository, install the dependencies and run it.. or download the pre-built files.
