@@ -1,6 +1,6 @@
 {
   "name": "liveme-pro-tools",
-  "version": "1.104.20180417",
+  "version": "1.2",
   "description": "Tools for Live.me video network",
   "homepage": "https://github.com/thecoder75/liveme-pro-tools/",
   "main": "index.js",
@@ -79,7 +79,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "format-duration": "^1.0.0",
     "hlsdownloader": "^2.1.0",
-    "liveme-api": "^1.2.6",
+    "liveme-api": "Lewdninja/liveme-api",
     "pretty-date": "^0.2.0",
     "request": "^2.83.0",
     "shelljs": "^0.8.1",
