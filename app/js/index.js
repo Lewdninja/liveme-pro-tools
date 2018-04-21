@@ -38,6 +38,11 @@ $(function(){
 
     initSettingsPanel();
 
+    // Authenticate if credentials saved
+    if (appSettings.get('auth.email') && appSettings.get('auth.password')) {
+        LiveMe.setAuthDetails(appSettings.get('auth.email'), appSettings.get('auth.password'))
+    }
+
     if (!isDev)
         initHome();
 
@@ -834,7 +839,7 @@ function _addReplayEntry(replay, wasSearched) {
     var watched = watchDate == false ? '<i class="icon icon-eye dim"></i>' : '<i class="icon icon-eye bright green" title="Last watched '+prettydate.format(watchDate)+'"></i>';
     var seen = watchDate == false ? '' : 'watched';
 
-    var isLive = replay.hlsvideosource.endsWith('flv') || replay.hlsvideosource.indexOf('liveplay') > 0 ? '[LIVE]' : '';
+    var isLive = replay.hlsvideosource.endsWith('flv') || replay.hlsvideosource.indexOf('liveplay') > 0 ? '<b style="color:limegreen;">[LIVE]</b>' : '';
     var in_queue = $('#download-'+replay.vid).length > 0 ? '<a id="download-replay-'+replay.vid+'" class="button icon-only" title="Download Replay"><i class="icon icon-download dim"></i></a>' : '<a id="download-replay-'+replay.vid+'" class="button icon-only" onClick="downloadVideo(\''+replay.vid+'\')" title="Download Replay"><i class="icon icon-download"></i></a>';
 
     var h = `
@@ -845,11 +850,13 @@ function _addReplayEntry(replay, wasSearched) {
                         <td width="70" class="${highlight}" align="right">${replay.playnumber}</td>
                         <td width="70" class="${highlight}" align="right">${replay.likenum}</td>
                         <td width="70" class="${highlight}" align="right">${replay.sharenum}</td>
-                        <td width="210" class="${highlight}" style="padding: 0 16px; text-align: right;">
+                        <td width="300" class="${highlight}" style="padding: 0 16px; text-align: right;">
                             <a class="button mini icon-small" onClick="copyToClipboard('${replay.vid}')" style="font-size: 10pt;" title="Copy ID to Clipboard">ID</a>
-                            &nbsp;&nbsp;
+                            &nbsp;
                             <a class="button mini icon-small" onClick="copyToClipboard('https://www.liveme.com/live.html?videoid=${replay.vid}')" href="#" style="font-size: 10pt;" title="Copy URL to Clipboard">URL</a>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;
+                            <a class="button mini icon-small" onClick="copyToClipboard('${replay.videosource || replay.hlsvideosource}')" style="font-size: 10pt;" title="Copy Source to Clipboard (m3u8 or flv)">Source</a>
+                            &nbsp;&nbsp;&nbsp;
                             <a class="button icon-only" onClick="playVideo('${replay.vid}')" title="Watch Replay"><i class="icon icon-play"></i></a>&nbsp;&nbsp;
                             <a class="button icon-only" onClick="readComments('${replay.vid}')" title="Read Comments"><i class="icon icon-bubbles3"></i></a>&nbsp;&nbsp;
                             ${in_queue}
