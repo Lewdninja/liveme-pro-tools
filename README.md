@@ -1,11 +1,9 @@
 # LiveMe Pro Tools
-This version is modified to work with the latest authentication update. **You have to enter your login details under Settings to see replays!**
+## You have to enter your login details under Settings to see replays!
 
 ## Downloads
 You can either clone this repository, install the dependencies and run it.. or download the pre-built files.
-
-- [Setup (exe)](https://mega.nz/#!FAkS0TAK!GucRsZqp49_zRkK6eiQX9TPH29iU-Cb8SblgvhRXqrY)
-- [Unpacked (zip)](https://mega.nz/#!AdcDnDrC!tR-8kM4sdklxOA0ShQYa-iRNRGb7bfjnLdOdNzVvDAE)
+### [Downloads / Releases](https://github.com/Lewdninja/liveme-pro-tools/releases)
 
 ## What Is LiveMe Pro Tools?
 Its an [Electron](https://electronjs.org) based application for Live.me Social Video network for:
