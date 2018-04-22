@@ -287,9 +287,6 @@ function downloadFile() {
 
     LiveMe.getVideoInfo(download_list[0]).then(video => {
 
-        console.log(JSON.stringify(video, null, 2))
-        return
-
         let path = appSettings.get('downloads.path')
         let dt = new Date(video.vtime * 1000)
         let mm = dt.getMonth() + 1
@@ -339,6 +336,11 @@ function downloadFile() {
                 }, 100)
             })
             .on('progress', function(progress) {
+                // FFMPEG doesn't always have this >.<
+                if ( ! progress.percent) {
+                    // console.log(progress.targetSize * 1000, +video.videosize, ((progress.targetSize * 1000) / +video.videosize) * 100)
+                    progress.percent = ((progress.targetSize * 1000) / +video.videosize) * 100
+                }
                 mainWindow.webContents.send('download-progress', {
                     videoid: download_list[0],
                     current: progress.percent,
@@ -346,6 +348,7 @@ function downloadFile() {
                 })
             })
             .on('start', function(c) {
+                console.log('started', c)
                 mainWindow.webContents.send('download-start', {
                     videoid: download_list[0],
                     filename: filename

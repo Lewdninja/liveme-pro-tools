@@ -306,7 +306,6 @@ function showFollowers(u) { ipcRenderer.send('open-followers-window', { userid: 
 function playVideo(vid) { ipcRenderer.send('watch-replay', { videoid: vid }); }
 function downloadVideo(vid) {
 
-    console.log(vid);
     $('#download-replay-' + vid).html('<i class="icon icon-download dim"></i>');
     $('#download-replay-' + vid).unbind();
 
