@@ -28,7 +28,7 @@ function redrawList () {
 
             LiveMe.getChatHistoryForVideo(video.msgfile)
                 .then(raw => {
-                    let t = raw.data.split('\n')
+                    let t = raw.split('\n')
                     let messages = []
                     for (let i = 0; i < t.length - 1; i++) {
                         try {
