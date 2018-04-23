@@ -1,17 +1,17 @@
 [
     {
         "title":"Authentication Required",
+        "date":"2018-04-23",
+        "body":"TheCoder has stepped down from maintaining Liveme Tools. Lewdninja is the new maintainer. You can support him on https://patreon.com/lewdninja"
+    },
+    {
+        "title":"Authentication Required",
         "date":"2018-04-21",
         "body":"Live.me updated their API. To see replays you have to authenticate yourself by opening settings."
     },
     {
-        "title":"FFMPEG",
-        "date":"2018-04-09",
-        "body":"The downloader module has now been switched to use FFMPEG to avoid errors now!"
-    },
-    {
         "title":"Missing Replays",
         "date":"2018-02-10",
-        "body":"<p>Even though it may say there's replays available, sometimes they are marked hidden and therefore are not visible.</p>"
+        "body":"Even though it may say there's replays available, sometimes they are marked hidden and therefore are not visible."
     }
 ]
