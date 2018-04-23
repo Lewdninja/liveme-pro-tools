@@ -1,22 +1,23 @@
-/*
-    LiveMe Pro Tools
-*/
+/**
+ * LiveMe Pro Tools
+ */
 
 const appName = 'LiveMe Pro Tools'
 
-const { app, BrowserWindow, ipcMain, Menu, shell, dialog, autoUpdater } = require('electron')
-const { exec, execFile } = require('child_process')
-const os = require('os')
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron')
+const { exec } = require('child_process')
+// const os = require('os')
 const fs = require('fs')
 const path = require('path')
 const request = require('request')
 const tarfs = require('tar-fs')
-const DataManager = new(require('./datamanager').DataManager)()
+const DataManager = new (require('./datamanager').DataManager)()
 const LivemeAPI = require('liveme-api')
 const LiveMe = new LivemeAPI({})
 const isDev = require('electron-is-dev')
-const formatDuration = require('format-duration')
+// const formatDuration = require('format-duration')
 const ffmpeg = require('fluent-ffmpeg')
+const async = require('async')
 
 let mainWindow = null
 let playerWindow = null
@@ -25,14 +26,14 @@ let chatWindow = null
 let wizardWindow = null
 let menu = null
 let appSettings = require('electron-settings')
-let download_list = []
-let errored_list = []
-let download_active = false
+let downloadList = []
+// let erroredList = []
+let downloadActive = false
 
-function createWindow() {
+function createWindow () {
     let isFreshInstall = appSettings.get('general.fresh_install') == null
 
-    if (isFreshInstall == true) {
+    if (isFreshInstall === true) {
         appSettings.set('general', {
             fresh_install: true,
             playerpath: '',
@@ -40,16 +41,16 @@ function createWindow() {
             hide_zeroreplay_followings: true
         })
         appSettings.set('position', {
-            mainWindow: [ -1, -1],
-            playerWindow: [ -1, -1],
-            bookmarksWindow: [ -1, -1],
+            mainWindow: [-1, -1],
+            playerWindow: [-1, -1],
+            bookmarksWindow: [-1, -1],
             fansWindow: [-1, -1],
-            followingsWindow: [-1, -1],
+            followingsWindow: [-1, -1]
         })
         appSettings.set('size', {
-            mainWindow: [ 1024, 600],
-            playerWindow: [ 370, 680 ],
-            bookmarksWindow: [ 400, 720 ]
+            mainWindow: [1024, 600],
+            playerWindow: [370, 680],
+            bookmarksWindow: [400, 720]
         })
         appSettings.set('downloads', {
             path: path.join(app.getPath('home'), 'Downloads'),
@@ -60,50 +61,50 @@ function createWindow() {
             url: 'http://localhost:8280',
             handle_downloads: false
         })
-	}
+    }
 
-    if ( ! appSettings.get('downloads.path')) {
+    if (!appSettings.get('downloads.path')) {
         appSettings.set('downloads', {
             path: path.join(app.getPath('home'), 'Downloads'),
             template: '%%replayid%%'
         })
     }
 
-    if ( ! appSettings.get('downloads.chunks')) {
+    if (!appSettings.get('downloads.chunks')) {
         appSettings.set('downloads.chunks', 1)
     }
 
-    if ( ! appSettings.get('lamd.enabled')) {
+    if (!appSettings.get('lamd.enabled')) {
         appSettings.set('lamd', {
             enabled: false,
             url: 'http://localhost:8280',
-            handle_downloads : false
+            handle_downloads: false
         })
     }
 
-    if ( ! appSettings.get('history.viewed_maxage')) {
+    if (!appSettings.get('history.viewed_maxage')) {
         appSettings.set('history', {
-			viewed_maxage: 1
+            viewed_maxage: 1
         })
     }
 
     let test = appSettings.get('position')
-    if (test.mainWindow[1] == undefined) {
+    if (test.mainWindow[1] === undefined) {
         appSettings.set('position', {
-            mainWindow: [ -1, -1],
-            playerWindow: [ -1, -1],
-            bookmarksWindow: [ -1, -1]
+            mainWindow: [-1, -1],
+            playerWindow: [-1, -1],
+            bookmarksWindow: [-1, -1]
         })
     }
 
-    /*
-        Create our window definitions
-    */
-    let winposition = appSettings.get('position.mainWindow')
+    /**
+     * Create our window definitions
+     */
+    // let winposition = appSettings.get('position.mainWindow')
     let winsize = appSettings.get('size.mainWindow')
 
     mainWindow = new BrowserWindow({
-        icon: __dirname + '/appicon.ico',
+        icon: path.join(__dirname, 'appicon.ico'),
         width: winsize[0],
         height: winsize[1],
         minWidth: 1024,
@@ -126,7 +127,7 @@ function createWindow() {
     })
 
     wizardWindow = new BrowserWindow({
-        icon: __dirname + '/appicon.ico',
+        icon: path.join(__dirname, 'appicon.ico'),
         width: 520,
         height: 300,
         darkTheme: true,
@@ -146,15 +147,15 @@ function createWindow() {
         }
     })
 
-    /*
-        Configure our window contents and callbacks
-    */
+    /**
+     * Configure our window contents and callbacks
+     */
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
-	mainWindow
+    mainWindow
         .on('open', () => {})
         .on('close', () => {
-            appSettings.set('position.mainWindow', mainWindow.getPosition() )
-            appSettings.set('size.mainWindow', mainWindow.getSize() )
+            appSettings.set('position.mainWindow', mainWindow.getPosition())
+            appSettings.set('size.mainWindow', mainWindow.getSize())
 
             DataManager.saveToDisk()
 
@@ -185,17 +186,17 @@ function createWindow() {
         })
 
         if (mainWindow != null) {
-			var pos = appSettings.get('position.mainWindow')
-			mainWindow.setPosition(pos[0], pos[1], false).show()
+            let pos = appSettings.get('position.mainWindow')
+            mainWindow.setPosition(pos[0], pos[1], false).show()
         }
 
         wizardWindow = null
     })
 
-    /*
-        Build our application menus using the templates provided
-        further down.
-    */
+    /**
+     * Build our application menus using the templates provided
+     * further down.
+     */
     menu = Menu.buildFromTemplate(getMenuTemplate())
     Menu.setApplicationMenu(menu)
 
@@ -205,34 +206,35 @@ function createWindow() {
 
     DataManager.loadFromDisk()
 
-	setTimeout(() => {
+    setTimeout(() => {
         const dt = new Date()
-        let ma = appSettings.get('history.viewed_maxage'), od = Math.floor((dt.getTime() - (ma * 86400000)) / 1000)
-		DataManager.unviewProfiles(od, false)
-	}, 250)
+        let ma = appSettings.get('history.viewed_maxage')
+        let od = Math.floor((dt.getTime() - (ma * 86400000)) / 1000)
+        DataManager.unviewProfiles(od, false)
+    }, 250)
 
     if (isFreshInstall) {
         DataManager.disableWrites()
         wizardWindow.loadURL(`file://${__dirname}/app/wizard.html`)
         wizardWindow.show()
     } else {
-		mainWindow.show()
+        mainWindow.show()
 
-		let pos = appSettings.get('position.mainWindow').length > 1 ? appSettings.get('position.mainWindow') : [null, null]
-		if (pos[0] != null) {
+        let pos = appSettings.get('position.mainWindow').length > 1 ? appSettings.get('position.mainWindow') : [null, null]
+        if (pos[0] != null) {
             mainWindow.setPosition(pos[0], pos[1], false)
         }
-	}
+    }
 }
 
-let shouldQuit = app.makeSingleInstance( function(commandLine,workingDirectory) {
-	if (mainWindow) {
-		mainWindow.focus()
-	}
+let shouldQuit = app.makeSingleInstance(function (commandLine, workingDirectory) {
+    if (mainWindow) {
+        mainWindow.focus()
+    }
 })
 if (shouldQuit) {
-	app.quit()
-	return
+    app.quit()
+    process.exit()
 }
 
 app.on('ready', () => {
@@ -240,7 +242,7 @@ app.on('ready', () => {
 })
 
 app.on('window-all-closed', () => {
-	app.quit()
+    app.quit()
 })
 
 app.on('activate', () => {
@@ -249,10 +251,9 @@ app.on('activate', () => {
     }
 })
 
-/*
-    IPC Event Handlers
-*/
-
+/**
+ * IPC Event Handlers
+ */
 ipcMain.on('import-queue', (event, arg) => {})
 
 ipcMain.on('import-users', (event, arg) => {})
@@ -260,33 +261,32 @@ ipcMain.on('import-users', (event, arg) => {})
 ipcMain.on('export-users', (event, arg) => {})
 
 ipcMain.on('download-replay', (event, arg) => {
-    download_list.push(arg.videoid)
+    downloadList.push(arg.videoid)
     DataManager.addToQueueList(arg.videoid)
-    if (download_active == false) {
+    if (downloadActive === false) {
         downloadFile()
     }
 })
-/*
- * 	Cannot cancel active download, only remove queued entries.
+/**
+ * Cannot cancel active download, only remove queued entries.
  */
 ipcMain.on('download-cancel', (event, arg) => {
-	for (var i = 0; i < download_list.length; i++) {
-		if (download_list[i] == arg.videois) {
-			download_list.splice(i, 1)
+    for (var i = 0; i < downloadList.length; i++) {
+        if (downloadList[i] === arg.videois) {
+            downloadList.splice(i, 1)
             DataManager.removeFromQueueList(arg.videoid)
-		}
-	}
+        }
+    }
 })
-/*
-    It is done this way in case the API call to jDownloader returns an error or doesn't connect.
-*/
-function downloadFile() {
-    if (download_list.length == 0) return
+/**
+ * It is done this way in case the API call to jDownloader returns an error or doesn't connect.
+ */
+function downloadFile () {
+    if (downloadList.length === 0) return
 
-	download_active = true
+    downloadActive = true
 
-    LiveMe.getVideoInfo(download_list[0]).then(video => {
-
+    LiveMe.getVideoInfo(downloadList[0]).then(video => {
         let path = appSettings.get('downloads.path')
         let dt = new Date(video.vtime * 1000)
         let mm = dt.getMonth() + 1
@@ -306,92 +306,136 @@ function downloadFile() {
             .replace(/%%replaydateus%%/g, ((mm < 10 ? '0' : '') + mm + '-' + (dd < 10 ? '0' : '') + dd + '-' + dt.getFullYear()))
             .replace(/%%replaydateeu%%/g, ((dd < 10 ? '0' : '') + dd + '-' + (mm < 10 ? '0' : '') + mm + '-' + dt.getFullYear()))
 
-		filename = filename.replace(/[/\\?%*:|"<>]/g, '-')
-		filename = filename.replace(/([^a-z0-9\s]+)/gi, '-')
-		filename = filename.replace(/[\u{0080}-\u{FFFF}]/gu, '')
+        filename = filename.replace(/[/\\?%*:|"<>]/g, '-')
+        filename = filename.replace(/([^a-z0-9\s]+)/gi, '-')
+        filename = filename.replace(/[\u{0080}-\u{FFFF}]/gu, '')
 
         filename += '.mp4'
         video._filename = filename
-        
+
         DataManager.addDownloaded(video.vid)
 
-        /*
-            20180409 - Added FFMPEG downloader by TheCoder
-        */
-        ffmpeg(video.hlsvideosource)
-            .outputOptions([
-                '-c copy',
-                '-bsf:a aac_adtstoasc',
-                '-vsync 2',
-                '-movflags faststart'
-            ])
-            .output(path + '/' + filename)
-            .on('end', function(stdout, stderr) {
-                mainWindow.webContents.send('download-complete', { videoid: download_list[0] })
-                download_list.shift()
+        /**
+         * 20180409 - Added FFMPEG downloader by TheCoder
+         */
+        mainWindow.webContents.send('download-start', {
+            videoid: downloadList[0],
+            filename: filename
+        })
+        request(video.hlsvideosource, (err, res, body) => {
+            if (err || !body) {
+                mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err || 'Failed to fetch m3u8 file.' })
+                downloadList.shift()
 
-                download_active = false
-                setTimeout(() => {
+                downloadActive = false
+                return setTimeout(() => {
                     downloadFile()
                 }, 100)
-            })
-            .on('progress', function(progress) {
-                // FFMPEG doesn't always have this >.<
-                if ( ! progress.percent) {
-                    // console.log(progress.targetSize * 1000, +video.videosize, ((progress.targetSize * 1000) / +video.videosize) * 100)
-                    progress.percent = ((progress.targetSize * 1000) / +video.videosize) * 100
+            }
+            // Separate ts names from m3u8
+            let concatList = ''
+            const tsList = []
+            body.split('\n').forEach(line => {
+                if (line.indexOf('.ts') !== -1) {
+                    const tsName = line.split('?')[0]
+                    const tsPath = `${path}/lpt_temp/${video.vid}_${tsName}`
+                    // Check if TS has already been added to array
+                    if (concatList.indexOf(tsPath) === -1) {
+                        // We'll use this later to merge downloaded chunks
+                        concatList += `${tsPath}|`
+                        // Push data to list
+                        tsList.push({ name: tsName, path: tsPath })
+                    }
                 }
-                mainWindow.webContents.send('download-progress', {
-                    videoid: download_list[0],
-                    current: progress.percent,
-                    total: 100
-                })
             })
-            .on('start', function(c) {
-                console.log('started', c)
-                mainWindow.webContents.send('download-start', {
-                    videoid: download_list[0],
-                    filename: filename
+            fs.writeFileSync(`${path}/lpt_temp/TSLIST.json`, JSON.stringify(tsList, null, 2))
+            // remove last |
+            concatList = concatList.slice(0, -1)
+            // Check if tmp dir exists
+            if (!fs.existsSync(`${path}/lpt_temp`)) {
+                // create temporary dir for ts files
+                fs.mkdirSync(`${path}/lpt_temp`)
+            }
+            // Download chunks
+            let downloadedChunks = 0
+            async.eachLimit(tsList, 25, (file, next) => {
+                const stream = request(`${video.hlsvideosource.split('/').slice(0, -1).join('/')}/${file.name}`).pipe(
+                    fs.createWriteStream(file.path)
+                )
+                // Events
+                stream.on('finish', () => {
+                    downloadedChunks += 1
+                    mainWindow.webContents.send('download-progress', {
+                        videoid: downloadList[0],
+                        state: `Downloading stream chunks.. (${downloadedChunks}/${tsList.length})`
+                    })
+                    next()
                 })
-            })
-            .on('error', function(err, stdout, etderr) {
-                mainWindow.webContents.send('download-error', { videoid: download_list[0], error: err })
-                download_list.shift()
+            }, () => {
+                // Chunks downloaded
+                ffmpeg()
+                    .on('start', c => {
+                        console.log('started', c)
+                        mainWindow.webContents.send('download-progress', {
+                            videoid: downloadList[0],
+                            state: `Converting to MP4, please wait..`
+                        })
+                    })
+                    .on('end', (stdout, stderr) => {
+                        tsList.forEach(file => fs.unlinkSync(file.path))
+                        mainWindow.webContents.send('download-complete', { videoid: downloadList[0] })
+                        downloadList.shift()
 
-                download_active = false
-                setTimeout(() => {
-                    downloadFile()
-                }, 100)
+                        downloadActive = false
+                        setTimeout(() => {
+                            downloadFile()
+                        }, 100)
+                    })
+                    .on('error', (err, stdout, etderr) => {
+                        tsList.forEach(file => fs.unlinkSync(file.path))
+                        mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
+                        downloadList.shift()
+
+                        downloadActive = false
+                        setTimeout(() => {
+                            downloadFile()
+                        }, 100)
+                    })
+                    .input(`concat:${concatList}`)
+                    .output(`${path}/${filename}`)
+                    .outputOption('-strict -2')
+                    .outputOption('-bsf:a aac_adtstoasc')
+                    .videoCodec('copy')
+                    .run()
             })
-            .run()
+        })
     })
 }
-
-
-/*
-    Watch a Replay - Use either internal player or external depending on settings
-*/
+/**
+ * Watch a Replay - Use either internal player or external depending on settings
+ */
 ipcMain.on('watch-replay', (event, arg) => {
-
     DataManager.addWatched(arg.videoid)
 
     LiveMe.getVideoInfo(arg.videoid)
         .then(video => {
-            let internalplayer = playerpath = appSettings.get('general.playerpath')
+            let internalplayer = appSettings.get('general.playerpath')
+            let playerpath = internalplayer
 
             if (playerpath.length > 5) {
                 exec(playerpath.replace('%url%', video.hlsvideosource))
             } else {
                 // Open internal player
                 if (playerWindow == null) {
-                    let winposition = appSettings.get('position.playerWindow'), winsize = appSettings.get('size.playerWindow')
+                    let winposition = appSettings.get('position.playerWindow')
+                    let winsize = appSettings.get('size.playerWindow')
 
                     playerWindow = new BrowserWindow({
-                        icon: __dirname + '/appicon.ico',
+                        icon: path.join(__dirname, 'appicon.ico'),
                         width: winsize[0],
                         height: winsize[1],
-                        x: winposition[0] != -1 ? winposition[0] : null,
-                        y: winposition[1] != -1 ? winposition[1] : null,
+                        x: winposition[0] !== -1 ? winposition[0] : null,
+                        y: winposition[1] !== -1 ? winposition[1] : null,
                         minWidth: 380,
                         minHeight: 708,
                         darkTheme: true,
@@ -431,12 +475,11 @@ ipcMain.on('show-user', (event, arg) => {
 })
 
 ipcMain.on('open-followings-window', (event, arg) => {
-
-	let winposition = appSettings.get('position.followingsWindow') ? appSettings.get('position.followingsWindow') : [-1, -1]
+    let winposition = appSettings.get('position.followingsWindow') ? appSettings.get('position.followingsWindow') : [-1, -1]
 
     let win = new BrowserWindow({
-		x: winposition[0] != -1 ? winposition[0] : null,
-		y: winposition[1] != -1 ? winposition[1] : null,
+        x: winposition[0] !== -1 ? winposition[0] : null,
+        y: winposition[1] !== -1 ? winposition[1] : null,
         width: 420,
         height: 720,
         resizable: false,
@@ -457,17 +500,16 @@ ipcMain.on('open-followings-window', (event, arg) => {
     win.on('ready-to-show', () => {
         win.show()
     }).on('close', () => {
-		appSettings.set('position.followingsWindow', win.getPosition())
-	}).loadURL(`file://${__dirname}/app/listwindow.html?1&` + arg.userid)
+        appSettings.set('position.followingsWindow', win.getPosition())
+    }).loadURL(`file://${__dirname}/app/listwindow.html?1&` + arg.userid)
 })
 
 ipcMain.on('open-followers-window', (event, arg) => {
-
-	var winposition = appSettings.get('position.fansWindow') ? appSettings.get('position.fansWindow') : [-1, -1]
+    let winposition = appSettings.get('position.fansWindow') ? appSettings.get('position.fansWindow') : [-1, -1]
 
     var win = new BrowserWindow({
-		x: winposition[0] != -1 ? winposition[0] : null,
-		y: winposition[1] != -1 ? winposition[1] : null,
+        x: winposition[0] !== -1 ? winposition[0] : null,
+        y: winposition[1] !== -1 ? winposition[1] : null,
         width: 420,
         height: 720,
         resizable: false,
@@ -488,12 +530,11 @@ ipcMain.on('open-followers-window', (event, arg) => {
     win.on('ready-to-show', () => {
         win.show()
     }).on('close', () => {
-		appSettings.set('position.fansWindow', win.getPosition())
+        appSettings.set('position.fansWindow', win.getPosition())
     }).loadURL(`file://${__dirname}/app/listwindow.html?0&` + arg.userid)
 })
 
 ipcMain.on('read-comments', (event, arg) => {
-
     let win = new BrowserWindow({
         width: 400,
         height: 660,
@@ -519,11 +560,12 @@ ipcMain.on('read-comments', (event, arg) => {
 
 ipcMain.on('open-bookmarks', (event, arg) => {
     if (bookmarksWindow == null) {
-        let winposition = appSettings.get('position.bookmarksWindow'), winsize = appSettings.get('size.bookmarksWindow')
+        let winposition = appSettings.get('position.bookmarksWindow')
+        let winsize = appSettings.get('size.bookmarksWindow')
 
         bookmarksWindow = new BrowserWindow({
-			x: winposition[0] > -1 ? winposition[0] : null,
-			y: winposition[1] > -1 ? winposition[1] : null,
+            x: winposition[0] > -1 ? winposition[0] : null,
+            y: winposition[1] > -1 ? winposition[1] : null,
             width: 400,
             height: winsize[1],
             minWidth: 400,
@@ -559,26 +601,27 @@ ipcMain.on('open-bookmarks', (event, arg) => {
 })
 
 ipcMain.on('restore-backup', (event, arg) => {
-    let d = dialog.showOpenDialog(
+    dialog.showOpenDialog(
         {
             properties: [
-                'openFile',
+                'openFile'
             ],
-            buttonLabel : 'Restore',
-            filters : [
-                { name : 'TAR files', extensions: [ 'tar' ]}
+            buttonLabel: 'Restore',
+            filters: [
+                {
+                    name: 'TAR files',
+                    extensions: ['tar']
+                }
             ]
         },
         (filePath) => {
-
             if (filePath != null) {
-
                 mainWindow.webContents.send('shutdown')
 
                 DataManager.disableWrites()
-                var config_path = path.join(app.getPath('appData'), app.getName(), '/')
-                fs.createReadStream(filePath[0]).pipe(tarfs.extract(config_path))
-                setTimeout(function(){
+                let configPath = path.join(app.getPath('appData'), app.getName(), '/')
+                fs.createReadStream(filePath[0]).pipe(tarfs.extract(configPath))
+                setTimeout(() => {
                     app.relaunch()
                     app.quit()
                 }, 1000)
@@ -588,19 +631,18 @@ ipcMain.on('restore-backup', (event, arg) => {
 })
 
 ipcMain.on('create-backup', (event, arg) => {
-
-    let config_path = path.join(app.getPath('appData'), app.getName())
-    let backup_file = path.join(app.getPath('home'), 'Downloads', 'liveme-pro-tools-backup.tar')
+    let configPath = path.join(app.getPath('appData'), app.getName())
+    let backupFile = path.join(app.getPath('home'), 'Downloads', 'liveme-pro-tools-backup.tar')
 
     tarfs.pack(
-        config_path,
+        configPath,
         {
             entries: [ 'bookmarks.json', 'downloaded.json', 'profiles.json', 'watched.json' ]
         }
-    ).pipe(fs.createWriteStream(backup_file))
+    ).pipe(fs.createWriteStream(backupFile))
 })
 
-function getMenuTemplate() {
+function getMenuTemplate () {
     let template = [
         {
             label: 'Edit',
@@ -636,16 +678,16 @@ function getMenuTemplate() {
             submenu: [
                 {
                     label: 'LiveMe Pro Tools Page',
-                    click: () => shell.openExternal('https://thecoder75.github.io/liveme-pro-tools/')
+                    click: () => shell.openExternal('https://github.com/lewdninja/liveme-pro-tools/')
                 }
             ]
         }
     ]
 
-	/*
-		This is here in case macOS version gets added back end after all the bugs/issues are figured out.
-		Requires a contributor running macOS now.
-	*/
+    /**
+     * This is here in case macOS version gets added back end after all the bugs/issues are figured out.
+     * Requires a contributor running macOS now.
+     */
     if (process.platform === 'darwin') {
         template.unshift({
             label: appName,
@@ -672,7 +714,7 @@ function getMenuTemplate() {
     return template
 }
 
-function getMiniMenuTemplate() {
+function getMiniMenuTemplate () {
     let template = [
         {
             label: 'Edit',
