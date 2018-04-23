@@ -29,7 +29,7 @@ You can either [download](http://www.ffmpeg.org) a static build or install the v
 ## Built With
 * [Electron](http://electron.atom.io)
 * [NodeJS](http://nodejs.org)
-* [LiveMe-API](https://thecoder75.github.io/liveme-api)
+* [LiveMe-API](https://github.com/lewdninja/liveme-api)
 
 ## Contributing
 If you find any bugs or would like to help add features or additional functions, please create a pull request for review.  
@@ -37,6 +37,7 @@ If you find any bugs or would like to help add features or additional functions,
 ## Contributors
 * [thecoder75](https://github.com/thecoder75)
 * [zp](https://github.com/zp)
+* [Lewdninja](https://github.com/lewdninja)
 
 ## License
 This project is licensed under the GPL-3 License - see the [LICENSE](LICENSE) file for details
