@@ -19,6 +19,24 @@ $(function () {
     $('#bookmark-list').html('')
     $('footer h1').html(max + ' bookmarks listed.')
 
+    $('#bookmark-search').bind('paste cut keydown', function () {
+        setTimeout(() => {
+            const value = $(this).val().toLowerCase()
+            if (value.trim().length === 0) {
+                $('#bookmark-list tr').show()
+                return
+            }
+            $('#bookmark-list tr').each(function () {
+                const name = $(this).find('h1').first().text().toLowerCase()
+                if (name.toLowerCase().indexOf(value) !== -1) {
+                    $(this).show()
+                } else {
+                    $(this).hide()
+                }
+            })
+        }, 500)
+    })
+
     setImmediate(() => {
         drawEntry()
     })

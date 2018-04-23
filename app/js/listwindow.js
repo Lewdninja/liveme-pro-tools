@@ -103,6 +103,25 @@ $(function () {
             }
         }
     })
+
+    $('#list-search').bind('paste cut keydown', function () {
+        setTimeout(() => {
+            const value = $(this).val().toLowerCase()
+            if (value.trim().length === 0) {
+                $('table tr').show()
+                return
+            }
+            $('table tr').each(function () {
+                const name = $(this).find('h1').first().text().toLowerCase()
+                const uids = $(this).find('.cell a[onclick]').text().toLowerCase()
+                if (name.indexOf(value) !== -1 || uids.indexOf(value) !== -1) {
+                    $(this).show()
+                } else {
+                    $(this).hide()
+                }
+            })
+        }, 500)
+    })
 })
 
 function startLoad () {
@@ -184,6 +203,7 @@ function doFollowings () {
 
         setTimeout(() => {
             scrollBusy = false
+            $('#list-search').trigger('keydown')
         }, 200)
 
         hasMore = results.length >= MAX_PAGE_SIZE
@@ -229,6 +249,7 @@ function doFans () {
 
         setTimeout(() => {
             scrollBusy = false
+            $('#list-search').trigger('keydown')
         }, 200)
 
         hasMore = results.length >= MAX_PAGE_SIZE
