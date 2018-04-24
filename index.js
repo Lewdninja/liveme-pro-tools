@@ -609,6 +609,8 @@ ipcMain.on('open-bookmarks', (event, arg) => {
             })
             bookmarksWindow = null
         })
+    } else {
+        bookmarksWindow.restore()
     }
     bookmarksWindow.on('ready-to-show', () => {
         bookmarksWindow.show()
