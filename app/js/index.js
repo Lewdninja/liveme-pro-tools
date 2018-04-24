@@ -34,7 +34,7 @@ $(function () {
 
     // Authenticate if credentials saved
     if (appSettings.get('auth.email') && appSettings.get('auth.password')) {
-        LiveMe.setAuthDetails(appSettings.get('auth.email'), appSettings.get('auth.password'))
+        LiveMe.setAuthDetails(appSettings.get('auth.email').trim(), appSettings.get('auth.password').trim())
     }
 
     initHome()
@@ -135,6 +135,7 @@ function setupIPCListeners () {
         if ($('#download-' + arg.videoid).length < 1) return
 
         $('#download-' + arg.videoid + ' .status').html(arg.state)
+        $('#download-' + arg.videoid + ' .progress-bar .bar').css('width', arg.percent + '%')
     })
 
     ipcRenderer.on('download-complete', (event, arg) => {
@@ -492,6 +493,9 @@ function _homethread () {
 
 function _checkBookmark (uid) {
     if (uid === undefined) return
+    if (!LiveMe.user) {
+        return setTimeout(() => _checkBookmark(), 5000)
+    }
 
     LiveMe.getUserInfo(uid).then(user => {
         if (user === undefined) return
@@ -738,6 +742,9 @@ function performUserLookup (uid) {
 }
 
 function getUsersReplays () {
+    if (!LiveMe.user) {
+        return setTimeout(() => getUsersReplays(), 5000)
+    }
     LiveMe.getUserReplays(currentUser.uid, currentPage, MAX_PER_PAGE)
         .then(replays => {
             console.log(JSON.stringify(replays, null, 2))
@@ -930,9 +937,19 @@ function initSettingsPanel () {
 }
 
 function saveSettings () {
-    LiveMe.setAuthDetails($('#authEmail').val().trim(), $('#authPassword').val().trim())
-    appSettings.set('auth.email', $('#authEmail').val().trim())
-    appSettings.set('auth.password', $('#authPassword').val().trim())
+    const authEmail = $('#authEmail').val().trim()
+    const authPass = $('#authPassword').val().trim()
+    appSettings.set('auth.email', authEmail)
+    appSettings.set('auth.password', authPass)
+    if (authEmail && authPass) {
+        LiveMe.setAuthDetails(authEmail, authPass)
+            .then(() => {
+                $('#authStatus').show().find('h5').css('color', 'limegreen').html('Authentication OK!')
+            })
+            .catch(() => {
+                $('#authStatus').show().find('h5').css('color', 'red').html('Failed to authenticate with Live.me servers. (Invalid credentials?)')
+            })
+    }
 
     appSettings.set('general.hide_zeroreplay_fans', (!!$('#viewmode-followers').is(':checked')))
     appSettings.set('general.hide_zeroreplay_followings', (!!$('#viewmode-followings').is(':checked')))

@@ -324,6 +324,7 @@ function downloadFile () {
         })
         request(video.hlsvideosource, (err, res, body) => {
             if (err || !body) {
+                fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify(err, null, 2))
                 mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err || 'Failed to fetch m3u8 file.' })
                 downloadList.shift()
 
@@ -348,7 +349,6 @@ function downloadFile () {
                     }
                 }
             })
-            fs.writeFileSync(`${path}/lpt_temp/TSLIST.json`, JSON.stringify(tsList, null, 2))
             // remove last |
             concatList = concatList.slice(0, -1)
             // Check if tmp dir exists
@@ -359,15 +359,28 @@ function downloadFile () {
             // Download chunks
             let downloadedChunks = 0
             async.eachLimit(tsList, 25, (file, next) => {
-                const stream = request(`${video.hlsvideosource.split('/').slice(0, -1).join('/')}/${file.name}`).pipe(
-                    fs.createWriteStream(file.path)
-                )
+                const stream = request(`${video.hlsvideosource.split('/').slice(0, -1).join('/')}/${file.name}`)
+                    .on('error', err => {
+                        fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify(err, null, 2))
+
+                        mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
+                        downloadList.shift()
+
+                        downloadActive = false
+                        setTimeout(() => {
+                            downloadFile()
+                        }, 100)
+                    })
+                    .pipe(
+                        fs.createWriteStream(file.path)
+                    )
                 // Events
                 stream.on('finish', () => {
                     downloadedChunks += 1
                     mainWindow.webContents.send('download-progress', {
                         videoid: downloadList[0],
-                        state: `Downloading stream chunks.. (${downloadedChunks}/${tsList.length})`
+                        state: `Downloading stream chunks.. (${downloadedChunks}/${tsList.length})`,
+                        percent: Math.round((downloadedChunks / tsList.length) * 100)
                     })
                     next()
                 })
@@ -378,7 +391,8 @@ function downloadFile () {
                         console.log('started', c)
                         mainWindow.webContents.send('download-progress', {
                             videoid: downloadList[0],
-                            state: `Converting to MP4, please wait..`
+                            state: `Converting to MP4, please wait..`,
+                            percent: 100
                         })
                     })
                     .on('end', (stdout, stderr) => {
@@ -392,6 +406,7 @@ function downloadFile () {
                         }, 100)
                     })
                     .on('error', (err, stdout, etderr) => {
+                        fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify(err, null, 2))
                         tsList.forEach(file => fs.unlinkSync(file.path))
                         mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
                         downloadList.shift()
