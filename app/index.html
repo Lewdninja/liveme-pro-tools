@@ -98,7 +98,7 @@
             <div class="area">
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Authentication</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Authentication</h4></li>
                         <li style="padding-bottom: 5px; display: none;" id="authStatus"><h5></h5></li>
                         <li style="padding-bottom: 20px;">
                             Email and password are required to see user replays.<br>
@@ -109,7 +109,7 @@
                 </div>
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Video Player</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Video Player</h4></li>
                         <li style="padding-bottom: 20px;">
                             Internal player is used by default unless you specify one in the field below.<br>
                             <input type="text" id="playerpath" placeholder="Full path to a player" style="width: 100%;" onBlur="saveSettings()"><br>
@@ -119,8 +119,8 @@
                 </div>
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Downloads</h4></li>
-                        <li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Downloads</h4></li>
+                        <li style="padding-bottom: 10px;">
                             <ul style="margin: 16px 0 0; padding: 0;">
                                 <li style="margin: 12px 0; line-height: 16px;">
                                     Download Location:<br>
@@ -173,11 +173,24 @@
                                 </li>
                             </ul>
                         </li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Download Method</h4></li>
+                        <li>
+                            <ul style="margin: 16px 0 0; padding: 0;">
+                                <li style="margin: 12px 0; line-height: 16px;">
+                                    <input type="radio" name="downloadMethod" id="ffmpeg-method">
+                                    <label for="ffmpeg-method">FFMPEG Stream Download <small>(Slow, but stable.)</small></label>
+                                </li>
+                                <li style="margin: 12px 0; line-height: 16px;">
+                                    <input type="radio" name="downloadMethod" id="chunk-method">
+                                    <label for="chunk-method">Chunk Download and Concat <small>(Fast, but could be less stable.)</small></label>
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Fans and Followings</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Fans and Followings</h4></li>
                         <li style="line-height: 24px;">
                             <input type="checkbox" id="viewmode-followings"> Hide followings with no replays.<br>
                             <input type="checkbox" id="viewmode-followers"> Hide followers with no replays.<br>
@@ -186,7 +199,7 @@
                 </div>
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>LAMD Support</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">LAMD Support</h4></li>
                         <li style="line-height: 24px;">
                             <input type="checkbox" id="lamd-enabled"> Enable LAMD support.<br>
                         </li>
@@ -207,7 +220,7 @@
                 </div>
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Tracking</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Tracking</h4></li>
                         <li>
                             LiveMe Pro Tools tracks all viewed profiles, replays and downloads.  This feature cannot be disabled.
                         </li>
@@ -216,7 +229,7 @@
 
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Viewed Profiles Auto Clear</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Viewed Profiles Auto Clear</h4></li>
                         <li style="line-height: 26px;">
                             Clear viewed profiles that were last seen more than
                             <div class="select" style="vertical-align: middle; height: 26px;">
@@ -233,7 +246,7 @@
 
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Data Stats</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Data Stats</h4></li>
                         <li>
                             <table>
                                 <tbody>
@@ -261,7 +274,7 @@
                 <div class="section">
                     <ul>
                         <li>
-                            <h4 id="appname">LiveMe Pro Tools <h6 id="version">Version 20180000</h6></h4>
+                            <h4 id="appname" class="titleColor">LiveMe Pro Tools <h6 id="version">Version 20180000</h6></h4>
                         </li>
                         <li style="padding-top: 20px;">
                             <h6>Contributors:</h6>
@@ -276,7 +289,7 @@
 
                 <div class="section">
                     <ul>
-                        <li style="padding-bottom: 5px;"><h4>Reset</h4></li>
+                        <li style="padding-bottom: 5px;"><h4 class="titleColor">Reset</h4></li>
                         <li style="line-height: 24px;">
                             <p>
                                 By clicking the button below, you will wipe all Bookmarks, Downloads, Visited and Watched entries

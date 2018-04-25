@@ -454,7 +454,7 @@ function initHome () {
                 for (let i = 0; i < feed.length; i++) {
                     $('#home div.panel').append(`
                         <div class="section">
-                            <h4>${feed[i].title}</h4>
+                            <h4 class="titleColor">${feed[i].title}</h4>
                             ${feed[i].body}
                         </div>
                     `)
