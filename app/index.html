@@ -177,11 +177,11 @@
                         <li>
                             <ul style="margin: 16px 0 0; padding: 0;">
                                 <li style="margin: 12px 0; line-height: 16px;">
-                                    <input type="radio" name="downloadMethod" id="ffmpeg-method">
+                                    <input type="radio" name="downloadMethod" value="ffmpeg" id="ffmpeg-method" onClick="saveSettings()">
                                     <label for="ffmpeg-method">FFMPEG Stream Download <small>(Slow, but stable.)</small></label>
                                 </li>
                                 <li style="margin: 12px 0; line-height: 16px;">
-                                    <input type="radio" name="downloadMethod" id="chunk-method">
+                                    <input type="radio" name="downloadMethod" value="chunk" id="chunk-method" onClick="saveSettings()">
                                     <label for="chunk-method">Chunk Download and Concat <small>(Fast, but could be less stable.)</small></label>
                                 </li>
                             </ul>

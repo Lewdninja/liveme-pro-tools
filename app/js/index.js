@@ -921,6 +921,8 @@ function initSettingsPanel () {
 
     $('#downloads-path').val(appSettings.get('downloads.path'))
     $('#downloads-template').val(appSettings.get('downloads.template'))
+    const dlMethod = appSettings.get('downloads.method') || 'ffmpeg'
+    $(`input[name="downloadMethod"][value="${dlMethod}"]`).prop('checked', true)
 
     $('#lamd-enabled').prop('checked', appSettings.get('lamd.enabled'))
     $('#lamd-downloads').prop('checked', appSettings.get('lamd.handle_downloads'))
@@ -962,6 +964,7 @@ function saveSettings () {
 
     appSettings.set('downloads.path', $('#downloads-path').val())
     appSettings.set('downloads.template', $('#downloads-template').val())
+    appSettings.set('downloads.method', $('input[name="downloadMethod"]:checked').val() || 'ffmpeg')
 
     appSettings.set('lamd.enabled', (!!$('#lamd-enabled').is(':checked')))
     appSettings.set('lamd.handle_downloads', (!!$('#lamd-downloads').is(':checked')))
