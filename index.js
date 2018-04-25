@@ -422,10 +422,14 @@ function downloadFile () {
                         .input(`concat:${concatList}`)
                         .output(`${path}/${filename}`)
                         // .outputOption('-strict -2')
-                        .outputOption('-c:v libx264')
-                        .outputOption('-c:a copy')
-                        .outputOption('-bsf:a aac_adtstoasc')
-                        .outputOption('-vsync 2')
+                        .outputOptions([
+                            '-c:v libx264',
+                            '-q:v 0',
+                            '-c:a copy',
+                            '-bsf:a aac_adtstoasc',
+                            '-vsync 2',
+                            '-preset superfast'
+                        ])
                         .run()
                 })
             })
