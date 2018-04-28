@@ -284,6 +284,12 @@ ipcMain.on('download-cancel', (event, arg) => {
 function downloadFile () {
     if (downloadList.length === 0) return
 
+    // Check if user defined a path to FFMPEG in settings
+    const ffmpegPath = appSettings.get('downloads.ffmepg')
+    if (ffmpegPath) {
+        ffmpeg.setFfmpegPath(ffmpegPath)
+    }
+
     downloadActive = true
 
     LiveMe.getVideoInfo(downloadList[0]).then(video => {
