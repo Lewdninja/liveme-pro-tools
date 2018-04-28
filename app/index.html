@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="css/page_index.css" media="all">
 
         <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+        <script type="text/javascript" src="js/handlebars-v4.0.11.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
     </head>
     <body>
@@ -51,7 +52,6 @@
         <div id="queue-list"></div>
 
         <main id="view-userinfo-replays" class="has-footer has-details">
-
             <div id="user-details" class="details">
                 <div class="avatar">
                     <img class="avatar" src=""  onerror="this.src='images/nouser.png'">
@@ -90,6 +90,27 @@
                 </tbody>
             </table>
         </main>
+        <script id="replays-list-row" type="text/x-handlebars-template">
+            <tr data-id="{{vid}}" class="{{searched}} {{seen}} user-{{userid}}">
+                <td width="410" class="{{highlight}}">{{{watched}}}&nbsp;&nbsp;{{{downloaded}}}&nbsp;&nbsp;&nbsp;{{unlisted}}{{{isLive}}}{{title}}</td>
+                <td width="120" class="{{highlight}}" align="center">{{ds}}</td>
+                <td width="50" class="{{highlight}}" align="right">{{length}}</td>
+                <td width="70" class="{{highlight}}" align="right">{{playnumber}}</td>
+                <td width="70" class="{{highlight}}" align="right">{{likenum}}</td>
+                <td width="70" class="{{highlight}}" align="right">{{sharenum}}</td>
+                <td width="300" class="{{highlight}}" style="padding: 0 16px; text-align: right;">
+                    <a class="button mini icon-small" onClick="copyToClipboard('{{vid}}')" style="font-size: 10pt;" title="Copy ID to Clipboard">ID</a>
+                    &nbsp;
+                    <a class="button mini icon-small" onClick="copyToClipboard('https://www.liveme.com/live.html?videoid={{vid}}')" href="#" style="font-size: 10pt;" title="Copy URL to Clipboard">URL</a>
+                    &nbsp;
+                    <a class="button mini icon-small" onClick="copyToClipboard('{{source}}')" style="font-size: 10pt;" title="Copy Source to Clipboard (m3u8 or flv)">Source</a>
+                    &nbsp;&nbsp;&nbsp;
+                    <a class="button icon-only" onClick="playVideo('{{vid}}')" title="Watch Replay"><i class="icon icon-play"></i></a>&nbsp;&nbsp;
+                    <a class="button icon-only" onClick="readComments('{{vid}}')" title="Read Comments"><i class="icon icon-bubbles3"></i></a>&nbsp;&nbsp;
+                    {{{inQueue}}}
+                </td>
+            </tr>
+        </script>
 
         <div id="popup-message"></div>
 

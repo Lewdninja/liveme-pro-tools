@@ -818,6 +818,23 @@ function _addReplayEntry (replay, wasSearched) {
     let isLive = replay.hlsvideosource.endsWith('flv') || replay.hlsvideosource.indexOf('liveplay') > 0 ? '<b style="color:limegreen;">[LIVE]</b>' : ''
     let inQueue = $('#download-' + replay.vid).length > 0 ? '<a id="download-replay-' + replay.vid + '" class="button icon-only" title="Download Replay"><i class="icon icon-download dim"></i></a>' : '<a id="download-replay-' + replay.vid + '" class="button icon-only" onClick="downloadVideo(\'' + replay.vid + '\')" title="Download Replay"><i class="icon icon-download"></i></a>'
 
+    const template = Handlebars.compile($('#replays-list-row').html())
+    const html = template(
+        Object.assign(replay, {
+            searched,
+            seen,
+            highlight,
+            watched,
+            downloaded,
+            unlisted,
+            isLive,
+            length,
+            ds,
+            inQueue,
+            source: replay.videosource || replay.hlsvideosource
+        })
+    )
+    /*
     let h = `
         <tr data-id="${replay.vid}" class="${searched} ${seen} user-${replay.userid}">
             <td width="410" class="${highlight}">${watched}&nbsp;&nbsp;${downloaded}&nbsp;&nbsp;&nbsp;${unlisted}${isLive}${replay.title}</td>
@@ -839,7 +856,9 @@ function _addReplayEntry (replay, wasSearched) {
             </td>
         </tr>
     `
-    $('#list tbody').append(h)
+    */
+    const item = $(html).hide().fadeIn(200)
+    $('#list tbody').append(item)
 }
 
 function performUsernameSearch () {
