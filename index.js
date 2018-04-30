@@ -405,7 +405,9 @@ function downloadFile () {
                             })
                         })
                         .on('end', (stdout, stderr) => {
-                            tsList.forEach(file => fs.unlinkSync(file.path))
+                            if (appSettings.get('downloads.deltmp')) {
+                                tsList.forEach(file => fs.unlinkSync(file.path))
+                            }
                             mainWindow.webContents.send('download-complete', { videoid: downloadList[0] })
                             downloadList.shift()
 
@@ -416,7 +418,9 @@ function downloadFile () {
                         })
                         .on('error', (err, stdout, stderr) => {
                             fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify([err, stdout, stderr], null, 2))
-                            tsList.forEach(file => fs.unlinkSync(file.path))
+                            if (appSettings.get('downloads.deltmp')) {
+                                tsList.forEach(file => fs.unlinkSync(file.path))
+                            }
                             mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
                             downloadList.shift()
 

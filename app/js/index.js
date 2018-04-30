@@ -287,6 +287,21 @@ function openBookmarks () { ipcRenderer.send('open-bookmarks') }
 function showFollowing (u) { ipcRenderer.send('open-followings-window', { userid: currentUser.uid !== undefined ? currentUser.uid : u }) }
 function showFollowers (u) { ipcRenderer.send('open-followers-window', { userid: currentUser.uid !== undefined ? currentUser.uid : u }) }
 function playVideo (vid) { ipcRenderer.send('watch-replay', { videoid: vid }) }
+function sortReplays (name) {
+    if (hasMore) {
+        $('footer h1').html('Not all replays were loaded - sorted only loaded replays.')
+        return
+    }
+    $('table#list tbody tr').sort(function (a, b) {
+        var aValue = $(a).find('td[data-name="' + name + '"]').text()
+        var bValue = $(b).find('td[data-name="' + name + '"]').text()
+        if (name === 'date') {
+            aValue = new Date(aValue).getTime()
+            bValue = new Date(bValue).getTime()
+        }
+        return ((+aValue < +bValue) ? 1 : ((+aValue > +bValue) ? -1 : 0))
+    }).appendTo('table#list tbody')
+}
 function downloadVideo (vid) {
     $('#download-replay-' + vid).html('<i class="icon icon-download dim"></i>')
     $('#download-replay-' + vid).unbind()
@@ -679,11 +694,19 @@ function performUserLookup (uid) {
             $('#list thead').html(`
                 <tr>
                     <th width="410">Title</th>
-                    <th width="120">Date</th>
+                    <th width="120">
+                        <a href="#" class="link text-center" onClick="sortReplays('date')" title="Sort by Date (desc)">Date</a>
+                    </th>
                     <th width="50" align="right">Length</th>
-                    <th width="70" align="right">Views</th>
-                    <th width="70" align="right">Likes</th>
-                    <th width="70" align="right">Shares</th>
+                    <th width="70" align="right">
+                        <a href="#" class="link text-right" onClick="sortReplays('views')" title="Sort by Views (desc)">Views</a>
+                    </th>
+                    <th width="70" align="right">
+                        <a href="#" class="link text-right" onClick="sortReplays('likes')" title="Sort by Likes (desc)">Likes</a>
+                    </th>
+                    <th width="70" align="right">
+                        <a href="#" class="link text-right" onClick="sortReplays('shares')" title="Sort by Shares (desc)">Shares</a>
+                    </th>
                     <th width="210">Actions</th>
                 </tr>
             `)
@@ -743,7 +766,10 @@ function performUserLookup (uid) {
 
 function getUsersReplays () {
     if (!LiveMe.user) {
+        $('#replay-result-alert').html('<span>Error!</span> You are not authenticated, please enter your login details under Settings.').fadeIn(200)
         return setTimeout(() => getUsersReplays(), 5000)
+    } else {
+        $('#replay-result-alert').hide()
     }
     LiveMe.getUserReplays(currentUser.uid, currentPage, MAX_PER_PAGE)
         .then(replays => {
@@ -751,6 +777,7 @@ function getUsersReplays () {
 
             if ((typeof replays === 'undefined') || (replays == null)) {
                 if (currentPage === 1) {
+                    $('#replay-result-alert').html('<span>No replays!</span> There is no publicly listed replays available.').fadeIn(200)
                     $('footer h1').html('No publicly listed replays available.')
                     hideProgressBar()
                 }
@@ -940,8 +967,15 @@ function initSettingsPanel () {
 
     $('#downloads-path').val(appSettings.get('downloads.path'))
     $('#downloads-template').val(appSettings.get('downloads.template'))
+    // DL Method val
     const dlMethod = appSettings.get('downloads.method') || 'ffmpeg'
     $(`input[name="downloadMethod"][value="${dlMethod}"]`).prop('checked', true)
+    // DL delete tmp val
+    if (appSettings.get('downloads.deltmp') === undefined) {
+        appSettings.set('downloads.deltmp', true)
+    }
+    $('#chunk-method-tmp').prop('checked', appSettings.get('downloads.deltmp'))
+    // FFMPEG path val
     const ffmpegPath = appSettings.get('downloads.ffmpeg') || false
     if (ffmpegPath) {
         $('#ffmpegPath').val(ffmpegPath)
@@ -988,6 +1022,7 @@ function saveSettings () {
     appSettings.set('downloads.path', $('#downloads-path').val())
     appSettings.set('downloads.template', $('#downloads-template').val())
     appSettings.set('downloads.method', $('input[name="downloadMethod"]:checked').val() || 'ffmpeg')
+    appSettings.set('downloads.deltmp', (!!$('#chunk-method-tmp').is(':checked')))
     appSettings.set('downloads.ffmepg', $('#ffmpegPath').val().trim() || false)
 
     appSettings.set('lamd.enabled', (!!$('#lamd-enabled').is(':checked')))
