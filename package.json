@@ -14,7 +14,7 @@
     "dev": "NODE_ENV='development' npm run start",
     "release-appveyor": "build -p always",
     "release-travis": "build -p always",
-    "release": "build -wl -p always"
+    "release": "build -wl -p never"
   },
   "author": "TheCoder75",
   "license": "GPL-3.0",

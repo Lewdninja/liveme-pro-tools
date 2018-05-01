@@ -288,10 +288,6 @@ function showFollowing (u) { ipcRenderer.send('open-followings-window', { userid
 function showFollowers (u) { ipcRenderer.send('open-followers-window', { userid: currentUser.uid !== undefined ? currentUser.uid : u }) }
 function playVideo (vid) { ipcRenderer.send('watch-replay', { videoid: vid }) }
 function sortReplays (name) {
-    if (hasMore) {
-        $('footer h1').html('Not all replays were loaded - sorted only loaded replays.')
-        return
-    }
     $('table#list tbody tr').sort(function (a, b) {
         var aValue = $(a).find('td[data-name="' + name + '"]').text()
         var bValue = $(b).find('td[data-name="' + name + '"]').text()
@@ -301,6 +297,9 @@ function sortReplays (name) {
         }
         return ((+aValue < +bValue) ? 1 : ((+aValue > +bValue) ? -1 : 0))
     }).appendTo('table#list tbody')
+    if (hasMore) {
+        setTimeout(() => sortReplays(name), 500)
+    }
 }
 function downloadVideo (vid) {
     $('#download-replay-' + vid).html('<i class="icon icon-download dim"></i>')
@@ -975,6 +974,8 @@ function initSettingsPanel () {
         appSettings.set('downloads.deltmp', true)
     }
     $('#chunk-method-tmp').prop('checked', appSettings.get('downloads.deltmp'))
+    // Parallel downloads
+    $('#downloads-parallel').val(appSettings.get('downloads.parallel') || 3)
     // FFMPEG path val
     const ffmpegPath = appSettings.get('downloads.ffmpeg') || false
     if (ffmpegPath) {
@@ -1024,6 +1025,9 @@ function saveSettings () {
     appSettings.set('downloads.method', $('input[name="downloadMethod"]:checked').val() || 'ffmpeg')
     appSettings.set('downloads.deltmp', (!!$('#chunk-method-tmp').is(':checked')))
     appSettings.set('downloads.ffmepg', $('#ffmpegPath').val().trim() || false)
+    appSettings.set('downloads.parallel', $('#downloads-parallel').val() || 3)
+
+    ipcRenderer.send('downloads-parallel', appSettings.get('downloads.parallel'))
 
     appSettings.set('lamd.enabled', (!!$('#lamd-enabled').is(':checked')))
     appSettings.set('lamd.handle_downloads', (!!$('#lamd-downloads').is(':checked')))

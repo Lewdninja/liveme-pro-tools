@@ -6,7 +6,7 @@ const appName = 'LiveMe Pro Tools'
 
 const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron')
 const { exec } = require('child_process')
-// const os = require('os')
+const os = require('os')
 const fs = require('fs')
 const path = require('path')
 const request = require('request')
@@ -15,7 +15,6 @@ const DataManager = new (require('./datamanager').DataManager)()
 const LivemeAPI = require('liveme-api')
 const LiveMe = new LivemeAPI({})
 const isDev = require('electron-is-dev')
-// const formatDuration = require('format-duration')
 const ffmpeg = require('fluent-ffmpeg')
 const async = require('async')
 
@@ -26,9 +25,6 @@ let chatWindow = null
 let wizardWindow = null
 let menu = null
 let appSettings = require('electron-settings')
-let downloadList = []
-// let erroredList = []
-let downloadActive = false
 
 function createWindow () {
     let isFreshInstall = appSettings.get('general.fresh_install') == null
@@ -260,46 +256,46 @@ ipcMain.on('import-users', (event, arg) => {})
 
 ipcMain.on('export-users', (event, arg) => {})
 
+ipcMain.on('downloads-parallel', (event, arg) => {
+    dlQueue.concurrency = arg
+})
+
 ipcMain.on('download-replay', (event, arg) => {
-    downloadList.push(arg.videoid)
     DataManager.addToQueueList(arg.videoid)
-    if (downloadActive === false) {
-        downloadFile()
-    }
+    dlQueue.push(arg.videoid, err => {
+        if (err) {
+            mainWindow.webContents.send('download-error', err)
+        } else {
+            mainWindow.webContents.send('download-complete', { videoid: arg.videoid })
+        }
+    })
 })
 /**
  * Cannot cancel active download, only remove queued entries.
  */
 ipcMain.on('download-cancel', (event, arg) => {
-    for (var i = 0; i < downloadList.length; i++) {
-        if (downloadList[i] === arg.videois) {
-            downloadList.splice(i, 1)
-            DataManager.removeFromQueueList(arg.videoid)
+    dlQueue.remove(function (task) {
+        if (task.data === arg.videoid) {
+            DataManager.removeFromQueueList(task.data)
+            return true
         }
-    }
+        return false
+    })
 })
 /**
  * It is done this way in case the API call to jDownloader returns an error or doesn't connect.
  */
-function downloadFile () {
-    if (downloadList.length === 0) return
+const dlQueue = async.queue((task, done) => {
+    // Set custom FFMPEG path if defined
+    if (appSettings.get('downloads.ffmepg')) ffmpeg.setFfmpegPath(appSettings.get('downloads.ffmepg'))
+    // Get video info
+    LiveMe.getVideoInfo(task).then(video => {
+        const path = appSettings.get('downloads.path')
+        const dt = new Date(video.vtime * 1000)
+        const mm = dt.getMonth() + 1
+        const dd = dt.getDate()
 
-    // Check if user defined a path to FFMPEG in settings
-    const ffmpegPath = appSettings.get('downloads.ffmepg')
-    if (ffmpegPath) {
-        ffmpeg.setFfmpegPath(ffmpegPath)
-    }
-
-    downloadActive = true
-
-    LiveMe.getVideoInfo(downloadList[0]).then(video => {
-        let path = appSettings.get('downloads.path')
-        let dt = new Date(video.vtime * 1000)
-        let mm = dt.getMonth() + 1
-        let dd = dt.getDate()
-        let filename = ''
-
-        filename = appSettings.get('downloads.template')
+        let filename = appSettings.get('downloads.template')
             .replace(/%%broadcaster%%/g, video.uname)
             .replace(/%%longid%%/g, video.userid)
             .replace(/%%replayid%%/g, video.vid)
@@ -315,17 +311,14 @@ function downloadFile () {
         filename = filename.replace(/[/\\?%*:|"<>]/g, '-')
         filename = filename.replace(/([^a-z0-9\s]+)/gi, '-')
         filename = filename.replace(/[\u{0080}-\u{FFFF}]/gu, '')
-
         filename += '.mp4'
         video._filename = filename
 
         DataManager.addDownloaded(video.vid)
 
-        /**
-         * 20180409 - Added FFMPEG downloader by TheCoder
-         */
+        // 20180409 - Added FFMPEG downloader by TheCoder
         mainWindow.webContents.send('download-start', {
-            videoid: downloadList[0],
+            videoid: task,
             filename: filename
         })
 
@@ -334,13 +327,7 @@ function downloadFile () {
             request(video.hlsvideosource, (err, res, body) => {
                 if (err || !body) {
                     fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify(err, null, 2))
-                    mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err || 'Failed to fetch m3u8 file.' })
-                    downloadList.shift()
-
-                    downloadActive = false
-                    return setTimeout(() => {
-                        downloadFile()
-                    }, 100)
+                    return done({ videoid: task, error: err || 'Failed to fetch m3u8 file.' })
                 }
                 // Separate ts names from m3u8
                 let concatList = ''
@@ -367,18 +354,11 @@ function downloadFile () {
                 }
                 // Download chunks
                 let downloadedChunks = 0
-                async.eachLimit(tsList, 25, (file, next) => {
+                async.eachLimit(tsList, 10, (file, next) => {
                     const stream = request(`${video.hlsvideosource.split('/').slice(0, -1).join('/')}/${file.name}`)
                         .on('error', err => {
                             fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify(err, null, 2))
-
-                            mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
-                            downloadList.shift()
-
-                            downloadActive = false
-                            setTimeout(() => {
-                                downloadFile()
-                            }, 100)
+                            return done({ videoid: task, error: err })
                         })
                         .pipe(
                             fs.createWriteStream(file.path)
@@ -387,7 +367,7 @@ function downloadFile () {
                     stream.on('finish', () => {
                         downloadedChunks += 1
                         mainWindow.webContents.send('download-progress', {
-                            videoid: downloadList[0],
+                            videoid: task,
                             state: `Downloading stream chunks.. (${downloadedChunks}/${tsList.length})`,
                             percent: Math.round((downloadedChunks / tsList.length) * 100)
                         })
@@ -399,7 +379,7 @@ function downloadFile () {
                         .on('start', c => {
                             console.log('started', c)
                             mainWindow.webContents.send('download-progress', {
-                                videoid: downloadList[0],
+                                videoid: task,
                                 state: `Converting to MP4, please wait..`,
                                 percent: 100
                             })
@@ -408,26 +388,14 @@ function downloadFile () {
                             if (appSettings.get('downloads.deltmp')) {
                                 tsList.forEach(file => fs.unlinkSync(file.path))
                             }
-                            mainWindow.webContents.send('download-complete', { videoid: downloadList[0] })
-                            downloadList.shift()
-
-                            downloadActive = false
-                            setTimeout(() => {
-                                downloadFile()
-                            }, 100)
+                            return done()
                         })
                         .on('error', (err, stdout, stderr) => {
                             fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify([err, stdout, stderr], null, 2))
                             if (appSettings.get('downloads.deltmp')) {
                                 tsList.forEach(file => fs.unlinkSync(file.path))
                             }
-                            mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
-                            downloadList.shift()
-
-                            downloadActive = false
-                            setTimeout(() => {
-                                downloadFile()
-                            }, 100)
+                            return done({ videoid: task, error: err })
                         })
                         .input(`concat:${concatList}`)
                         .output(`${path}/${filename}`)
@@ -454,13 +422,7 @@ function downloadFile () {
                 ])
                 .output(path + '/' + filename)
                 .on('end', function (stdout, stderr) {
-                    mainWindow.webContents.send('download-complete', { videoid: downloadList[0] })
-                    downloadList.shift()
-
-                    downloadActive = false
-                    setTimeout(() => {
-                        downloadFile()
-                    }, 100)
+                    return done()
                 })
                 .on('progress', function (progress) {
                     // FFMPEG doesn't always have this >.<
@@ -468,7 +430,7 @@ function downloadFile () {
                         progress.percent = ((progress.targetSize * 1000) / +video.videosize) * 100
                     }
                     mainWindow.webContents.send('download-progress', {
-                        videoid: downloadList[0],
+                        videoid: task,
                         state: `Downloading (${Math.round(progress.percent)}%)`,
                         percent: progress.percent
                     })
@@ -476,25 +438,19 @@ function downloadFile () {
                 .on('start', function (c) {
                     console.log('started', c)
                     mainWindow.webContents.send('download-start', {
-                        videoid: downloadList[0],
+                        videoid: task,
                         filename: filename
                     })
                 })
                 .on('error', function (err, stdout, stderr) {
                     fs.writeFileSync(`${path}/${filename}-error.log`, JSON.stringify([err, stdout, stderr], null, 2))
-                    mainWindow.webContents.send('download-error', { videoid: downloadList[0], error: err })
-                    downloadList.shift()
-
-                    downloadActive = false
-                    setTimeout(() => {
-                        downloadFile()
-                    }, 100)
+                    return done({ videoid: task, error: err })
                 })
                 .run()
             break
         }
     })
-}
+}, +appSettings.get('downloads.parallel') || 3)
 /**
  * Watch a Replay - Use either internal player or external depending on settings
  */
