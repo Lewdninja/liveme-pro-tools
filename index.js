@@ -506,6 +506,9 @@ ipcMain.on('watch-replay', (event, arg) => {
                 playerWindow.loadURL(`file://${__dirname}/app/player.html?${video.vid}`)
             }
         })
+        .catch(err => {
+            console.log('[watch-replay] getVideoInfo Error:', err)
+        })
 })
 
 ipcMain.on('open-bookmarks', (event, arg) => {})

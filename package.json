@@ -84,8 +84,8 @@
     "liveme-api": "github:Lewdninja/liveme-api",
     "pretty-date": "^0.2.0",
     "request": "^2.83.0",
-    "shelljs": "^0.8.1",
-    "tar-fs": "^1.16.0"
+    "shelljs": "^0.8.2",
+    "tar-fs": "^1.16.2"
   },
   "devDependencies": {
     "electron": "^1.8.6",
