@@ -1,6 +1,7 @@
 /* global $ */
 
-const MAX_PER_PAGE = 5
+const MAX_PER_PAGE = 10
+const MAX_RETRIES = 3
 
 const { electron, BrowserWindow, remote, ipcRenderer, shell, dialog, clipboard } = require('electron')
 const fs = require('fs')
@@ -388,7 +389,7 @@ function preSearch (q) {
             onTypeChange()
         }
     } else if (!isnum) {
-        if ($('#search-type').val() !== 'username-like') {
+        if (['username-like', 'hashtag'].indexOf($('#search-type').val()) === -1) {
             $('#search-type').val('username-like')
             onTypeChange()
         }
@@ -477,7 +478,7 @@ function initHome () {
         })
     }, 500)
 
-    $('footer h1').html('Bookmarks are now being scanned for new replays...')
+    $('footer h1').html('Bookmarks are now being scanned for new replays...').parent().show()
     $('#home').show()
 
     var bookmarks = DataManager.getAllBookmarks()
@@ -511,60 +512,64 @@ function _checkBookmark (uid) {
         return setTimeout(() => _checkBookmark(), 5000)
     }
 
-    LiveMe.getUserInfo(uid).then(user => {
-        if (user === undefined) return
+    LiveMe.getUserInfo(uid)
+        .then(user => {
+            if (user === undefined) return
 
-        let b = DataManager.getSingleBookmark(user.user_info.uid)
-        let dt = new Date()
-        b.counts.replays = user.count_info.video_count
-        b.counts.friends = user.count_info.friends_count
-        b.counts.followers = user.count_info.follower_count
-        b.counts.followings = user.count_info.following_count
-        b.signature = user.user_info.usign
-        b.sex = user.user_info.sex
-        b.face = user.user_info.face
-        b.nickname = user.user_info.uname
-        b.shortid = user.user_info.short_id
+            let b = DataManager.getSingleBookmark(user.user_info.uid)
+            let dt = new Date()
+            b.counts.replays = user.count_info.video_count
+            b.counts.friends = user.count_info.friends_count
+            b.counts.followers = user.count_info.follower_count
+            b.counts.followings = user.count_info.following_count
+            b.signature = user.user_info.usign
+            b.sex = user.user_info.sex
+            b.face = user.user_info.face
+            b.nickname = user.user_info.uname
+            b.shortid = user.user_info.short_id
 
-        DataManager.updateBookmark(b)
+            DataManager.updateBookmark(b)
 
-        if (b.counts.replays > 0) {
-            LiveMe.getUserReplays(uid, 1, 2)
-                .then(replays => {
-                    if (replays === undefined) return
-                    if (replays.length < 1) return
+            if (b.counts.replays > 0) {
+                LiveMe.getUserReplays(uid, 1, 2)
+                    .then(replays => {
+                        if (replays === undefined) return
+                        if (replays.length < 1) return
 
-                    let count = 0
-                    let userid = replays[0].userid
-                    let bookmark = DataManager.getSingleBookmark(userid)
+                        let count = 0
+                        let userid = replays[0].userid
+                        let bookmark = DataManager.getSingleBookmark(userid)
 
-                    for (let i = 0; i < replays.length; i++) {
-                        if (replays[i].vtime - bookmark.newest_replay > 0) {
-                            let latest = prettydate.format(new Date(replays[0].vtime * 1000))
-                            let last = prettydate.format(new Date(bookmark.last_viewed * 1000))
+                        for (let i = 0; i < replays.length; i++) {
+                            if (replays[i].vtime - bookmark.newest_replay > 0) {
+                                let latest = prettydate.format(new Date(replays[0].vtime * 1000))
+                                let last = prettydate.format(new Date(bookmark.last_viewed * 1000))
 
-                            bookmark.newest_replay = Math.floor(replays[0].vtime)
-                            DataManager.updateBookmark(bookmark)
+                                bookmark.newest_replay = Math.floor(replays[0].vtime)
+                                DataManager.updateBookmark(bookmark)
 
-                            if (currentView === 'home') {
-                                $('#home #bookmarklist').append(`
-                                    <div class="bookmark" id="bookmark-${bookmark.uid}" onClick="showUser('${bookmark.uid}')">
-                                        <img src="${bookmark.face}" class="avatar" onError="$(this).hide()">
-                                        <h1>${bookmark.nickname}</h1>
-                                        <h3>Newest replay posted ${latest}</h3>
-                                        <h2>NEW</h2>
-                                    </div>
-                                `)
+                                if (currentView === 'home') {
+                                    $('#home #bookmarklist').append(`
+                                        <div class="bookmark" id="bookmark-${bookmark.uid}" onClick="showUser('${bookmark.uid}')">
+                                            <img src="${bookmark.face}" class="avatar" onError="$(this).hide()">
+                                            <h1>${bookmark.nickname}</h1>
+                                            <h3>Newest replay posted ${latest}</h3>
+                                            <h2>NEW</h2>
+                                        </div>
+                                    `)
+                                }
+                                break
                             }
-                            break
                         }
-                    }
-                })
-                .catch(error => {
-                    console.log(error)
-                })
-        }
-    })
+                    })
+                    .catch(error => {
+                        console.log(error)
+                    })
+            }
+        })
+        .catch(err => {
+            console.log('_checkBookmark:', err)
+        })
 }
 
 function saveAccountFace () {
@@ -650,15 +655,26 @@ function doSearch () {
         $('#list thead').html('')
         performUsernameSearch()
         break
+    
+    case 'hashtag':
+        $('main').show().removeClass('has-details')
+        $('.details').hide()
+        $('#list thead').html('')
+        performHashtagSearch()
+        break
     }
 }
 
 function performShortIDSearch () {
-    LiveMe.performSearch($('#search-query').val(), 1, 1, 1).then(results => {
-        if (results.length > 0) {
-            performUserLookup(results[0].user_id)
-        }
-    })
+    LiveMe.performSearch($('#search-query').val(), 1, 1, 1)
+        .then(results => {
+            if (results.length > 0) {
+                performUserLookup(results[0].user_id)
+            }
+        })
+        .catch(err => {
+            console.log('performShortIDSearch:', err)
+        })
 }
 
 function performVideoLookup (q) {
@@ -672,10 +688,12 @@ function performVideoLookup (q) {
                 _addReplayEntry(video, true)
                 performUserLookup(video.userid)
             }
-        }).catch(() => {
+        })
+        .catch(err => {
             $('#status').html('Video not found or was deleted from the servers.')
             $('overlay').hide()
             $('main').hide()
+            console.log('performVideoLookup:', err)
         })
 }
 
@@ -758,12 +776,16 @@ function performUserLookup (uid) {
             getUsersReplays()
             showProgressBar()
         })
-        .catch(() => {
+        .catch(err => {
             $('#status').html('Account no longer available.')
+            console.log('performUserLookup:', err)
         })
 }
 
-function getUsersReplays () {
+function getUsersReplays (retries) {
+    if (retries === undefined) {
+        retries = MAX_RETRIES
+    }
     if (!LiveMe.user) {
         $('#replay-result-alert').html('<span>Error!</span> You are not authenticated, please enter your login details under Settings.').fadeIn(200)
         return setTimeout(() => getUsersReplays(), 5000)
@@ -777,7 +799,7 @@ function getUsersReplays () {
             if ((typeof replays === 'undefined') || (replays == null)) {
                 if (currentPage === 1) {
                     $('#replay-result-alert').html('<span>No replays!</span> There is no publicly listed replays available.').fadeIn(200)
-                    $('footer h1').html('No publicly listed replays available.')
+                    $('footer h1').html('No publicly listed replays available.').parent().show()
                     hideProgressBar()
                 }
                 return
@@ -792,7 +814,7 @@ function getUsersReplays () {
 
             $('#list tbody tr').not('.user-' + currentUser.uid).remove()
 
-            $('footer h1').html($('#list tbody tr').length + ' visible of ' + currentUser.counts.replays + ' total replays loaded.')
+            $('footer h1').html($('#list tbody tr').length + ' visible of ' + currentUser.counts.replays + ' total replays loaded.').parent().show()
             setProgressBarValue(($('#list tbody tr').length / currentUser.counts.replays) * 100)
             hasMore = replays.length === MAX_PER_PAGE
 
@@ -810,14 +832,17 @@ function getUsersReplays () {
                     $('#list table tbody tr.unlisted').removeClass('unlisted')
                 } else {
                     $('#list table tbody tr.unlisted').remove()
-                    $('footer h1').html($('#list tbody tr').length + ' visible of ' + currentUser.counts.replays + ' total replays loaded.')
+                    $('footer h1').html($('#list tbody tr').length + ' visible of ' + currentUser.counts.replays + ' total replays loaded.').parent().show()
                 }
-                if (d === 0) $('footer h1').html('No publicly listed replays available.')
+                if (d === 0) $('footer h1').html('No publicly listed replays available.').parent().show()
 
                 hideProgressBar()
             }
         })
         .catch(error => {
+            if (retries) {
+                setTimeout(() => getUsersReplays(retries - 1), 500)
+            }
             console.log(error)
         })
 }
@@ -895,14 +920,14 @@ function performUsernameSearch () {
             setTimeout(function () { scrollBusy = false }, 250)
 
             for (var i = 0; i < results.length; i++) {
-                let bookmarked = DataManager.isBookmarked(results[i].user_id) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
-                let viewed = DataManager.wasProfileViewed(results[i].user_id)
-                    ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].user_id)) + '"></i>'
+                let bookmarked = DataManager.isBookmarked(results[i].userid) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
+                let viewed = DataManager.wasProfileViewed(results[i].userid)
+                    ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].userid)) + '"></i>'
                     : '<i class="icon icon-eye dim"></i>'
                 let sex = results[i].sex < 0 ? '' : (results[i].sex === 0 ? 'female' : 'male')
 
                 $('#list tbody').append(`
-                    <tr id="user-${results[i].user_id}" class="user-search ${sex}">
+                    <tr id="user-${results[i].userid}" class="user-search ${sex}">
                         <td width="128" style="text-align: center;">
                             <img src="${results[i].face}" style="height: 128px; width: 128px;" onError="$(this).hide()">
                         </td>
@@ -918,9 +943,9 @@ function performUsernameSearch () {
                             <div class="bookmarked">${bookmarked}</div>
                             <div class="viewed">${viewed}</div>
 
-                            <a class="button replays" onClick="showUser('${results[i].user_id}')">0 Replays</a>
-                            <a class="button followings" onClick="showFollowing('${results[i].user_id}')">Following 0</a>
-                            <a class="button followers" onClick="showFollowers('${results[i].user_id}')">0 Fans</a>
+                            <a class="button replays" onClick="showUser('${results[i].userid}')">0 Replays</a>
+                            <a class="button followings" onClick="showFollowing('${results[i].userid}')">Following 0</a>
+                            <a class="button followers" onClick="showFollowers('${results[i].userid}')">0 Fans</a>
 
                         </td>
                     </tr>
@@ -942,7 +967,7 @@ function performUsernameSearch () {
                         $('#user-' + user.user_info.uid + ' td.details h5.country').html(`${user.user_info.countryCode}`)
                     })
 
-                $('footer h1').html($('#list tbody tr').length + ' accounts found so far, scroll down to load more.')
+                $('footer h1').html($('#list tbody tr').length + ' accounts found so far, scroll down to load more.').parent().show()
             }
 
             if (results.length === 0 && currentPage === 1) {
@@ -950,6 +975,91 @@ function performUsernameSearch () {
             } else {
                 $('#status').hide()
             }
+        })
+        .catch(err => {
+            console.log('performUsernameSearch:', err)
+        })
+}
+
+function performHashtagSearch () {
+    LiveMe.performSearch($('#search-query').val(), currentPage, MAX_PER_PAGE, 2)
+        .then(results => {
+            currentSearch = 'performHashtagSearch'
+            hasMore = results.length >= MAX_PER_PAGE
+            setTimeout(function () { scrollBusy = false }, 250)
+
+            for (var i = 0; i < results.length; i++) {
+                let bookmarked = DataManager.isBookmarked(results[i].userid) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
+                let viewed = DataManager.wasProfileViewed(results[i].userid)
+                    ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].userid)) + '"></i>'
+                    : '<i class="icon icon-eye dim"></i>'
+                let sex = +results[i].sex < 0 ? '' : (+results[i].sex === 0 ? 'female' : 'male')
+
+                let dt = new Date(results[i].vtime * 1000)
+                let ds = (dt.getMonth() + 1) + '-' + dt.getDate() + '-' + dt.getFullYear() + ' ' + (dt.getHours() < 10 ? '0' : '') + dt.getHours() + ':' + (dt.getMinutes() < 10 ? '0' : '') + dt.getMinutes()
+
+                $('#list tbody').append(`
+                    <tr id="user-${results[i].userid}" class="user-search ${sex}">
+                        <td width="128" style="text-align: center;">
+                            <img src="${results[i].smallcover}" style="height: 128px; width: 128px;" onError="$(this).hide()">
+                        </td>
+                        <td width="896" class="details">
+                            <h4 class="play" onClick="playVideo('${results[i].vid}')" title="Watch Replay"><i class="icon icon-play"></i> ${results[i].title}</h4>
+
+                            <h5 class="subtitle">
+                                Views: ${results[i].playnumber.toLocaleString('en-US')}
+                                &nbsp;
+                                Likes: ${results[i].likenum.toLocaleString('en-US')}
+                                &nbsp;
+                                Length: ${formatDuration(parseInt(results[i].videolength) * 1000)}
+                                &nbsp;
+                                Date: ${ds}
+                            </h5>
+
+                            <h5 class="userid"></h5>
+                            <h5 class="shortid"></h5>
+
+                            <h5 class="level"></h5>
+                            <h5 class="country"></h5>
+
+                            <div class="bookmarked">${bookmarked}</div>
+                            <div class="viewed">${viewed}</div>
+
+                            <a class="button replays" onClick="showUser('${results[i].userid}')">0 Replays</a>
+                            <a class="button followings" onClick="showFollowing('${results[i].userid}')">Following 0</a>
+                            <a class="button followers" onClick="showFollowers('${results[i].userid}')">0 Fans</a>
+
+                        </td>
+                    </tr>
+                `)
+
+                LiveMe.getUserInfo(results[i].userid)
+                    .then(user => {
+                        if (user === undefined) return
+                        if (user === null) return
+
+                        $('#user-' + user.user_info.uid + ' td.details a.replays').html(`${user.count_info.video_count.toLocaleString('en-US')} Replays`)
+                        $('#user-' + user.user_info.uid + ' td.details a.followings').html(`Following ${user.count_info.following_count.toLocaleString('en-US')}`)
+                        $('#user-' + user.user_info.uid + ' td.details a.followers').html(`${user.count_info.follower_count.toLocaleString('en-US')} Fans`)
+
+                        $('#user-' + user.user_info.uid + ' td.details h5.userid').html(`ID: <span>${user.user_info.uid}<a class="button icon-only" title="Copy to Clipboard" onClick="copyToClipboard('${user.user_info.uid}')"><i class="icon icon-copy"></i></a></span>`)
+                        $('#user-' + user.user_info.uid + ' td.details h5.shortid').html(`Short ID: <span>${user.user_info.short_id}<a class="button icon-only" title="Copy to Clipboard" onClick="copyToClipboard('${user.user_info.short_id}')"><i class="icon icon-copy"></i></a></span>`)
+
+                        $('#user-' + user.user_info.uid + ' td.details h5.level').html(`Level: <span>${user.user_info.level}</span>`)
+                        $('#user-' + user.user_info.uid + ' td.details h5.country').html(`${user.user_info.countryCode}`)
+                    })
+
+                $('footer h1').html($('#list tbody tr').length + ' videos found so far, scroll down to load more.').parent().show()
+            }
+
+            if (results.length === 0 && currentPage === 1) {
+                $('#status').html('No videos were found searching for ' + $('#search-query').val()).show()
+            } else {
+                $('#status').hide()
+            }
+        })
+        .catch(err => {
+            console.log('performHashtagSearch:', err)
         })
 }
 
@@ -1009,8 +1119,9 @@ function saveSettings () {
             .then(() => {
                 $('#authStatus').show().find('h5').css('color', 'limegreen').html('Authentication OK!')
             })
-            .catch(() => {
+            .catch(err => {
                 $('#authStatus').show().find('h5').css('color', 'red').html('Failed to authenticate with Live.me servers. (Invalid credentials?)')
+                console.log('saveSettings|setAuthDetails:', err)
             })
     }
 

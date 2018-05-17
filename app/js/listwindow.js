@@ -271,7 +271,7 @@ function doFans () {
 
 function addEntry (entry) {
     let prettydate = require('pretty-date')
-    let sex = entry.sex < 0 ? '' : (entry.sex === 0 ? 'is-female' : 'is-male')
+    let sex = +entry.sex < 0 ? '' : (+entry.sex === 0 ? 'is-female' : 'is-male')
     let seenRaw = DataManager.wasProfileViewed(entry.uid)
     let seenDate = seenRaw !== false ? prettydate.format(seenRaw) : ''
     let seen = seenRaw !== false ? 'bright blue' : 'dim'
@@ -315,9 +315,9 @@ function addEntry (entry) {
             $('#entry-' + user.user_info.uid).remove()
         } else {
             $('#entry-' + user.user_info.uid).addClass('entry-' + user.user_info.short_id)
-            $('#user-' + user.user_info.uid + '-buttons a.view').html(user.count_info.replay_count + ' Replays')
-            $('#user-' + user.user_info.uid + '-buttons a.fans').html(user.count_info.follower_count + ' Fans')
-            $('#user-' + user.user_info.uid + '-buttons a.following').html('Following ' + user.count_info.following_count)
+            $('#user-' + user.user_info.uid + '-buttons a.view').html(user.count_info.replay_count.toLocaleString('en-US') + ' Replays')
+            $('#user-' + user.user_info.uid + '-buttons a.fans').html(user.count_info.follower_count.toLocaleString('en-US') + ' Fans')
+            $('#user-' + user.user_info.uid + '-buttons a.following').html('Following ' + user.count_info.following_count.toLocaleString('en-US'))
         }
     })
 }

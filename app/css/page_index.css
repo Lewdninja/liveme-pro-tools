@@ -468,6 +468,14 @@
     line-height: 32pt;
     font-weight: 300;
 }
+.user-search td.details h4.play i {
+    vertical-align: middle;
+    color: #9356f3;
+}
+.user-search td.details h4.play:hover {
+    cursor: pointer;
+    color: #9356f3;
+}
 
 .user-search h5  {
     position: absolute;
@@ -491,8 +499,9 @@
     min-width: 24px;
     text-align: right;
 }
-.user-search h5.userid  { left: 8px;   bottom: 48px; }
-.user-search h5.shortid { left: 240px; bottom: 48px; }
+.user-search h5.subtitle { left: 8px; right: 8px; bottom: 80px; }
+.user-search h5.userid  { left: 8px;   bottom: 40px; }
+.user-search h5.shortid { left: 240px; bottom: 40px; }
 .user-search h5.level   { left: 8px;   bottom: 16px; }
 .user-search h5.country { left: 96px;  bottom: 16px; }
 
