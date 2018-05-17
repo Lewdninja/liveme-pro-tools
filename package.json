@@ -85,7 +85,10 @@
     "pretty-date": "^0.2.0",
     "request": "^2.83.0",
     "shelljs": "^0.8.2",
-    "tar-fs": "^1.16.2"
+    "tar-fs": "^1.16.2",
+    "video.js": "^6.9.0",
+    "videojs-contrib-hls.js": "^3.2.0",
+    "videojs-rotatezoom": "0.0.1"
   },
   "devDependencies": {
     "electron": "^1.8.6",
