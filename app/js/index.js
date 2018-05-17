@@ -730,7 +730,7 @@ function performUserLookup (uid) {
 
             setTimeout(() => CheckForLAMD(), 50)
 
-            let sex = user.user_info.sex < 0 ? '' : (user.user_info.sex === 0 ? 'female' : 'male')
+            let sex = +user.user_info.sex < 0 ? '' : (+user.user_info.sex === 0 ? 'female' : 'male')
             $('#user-details').show()
 
             $('img.avatar').attr('src', user.user_info.face)
@@ -924,7 +924,7 @@ function performUsernameSearch () {
                 let viewed = DataManager.wasProfileViewed(results[i].userid)
                     ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].userid)) + '"></i>'
                     : '<i class="icon icon-eye dim"></i>'
-                let sex = results[i].sex < 0 ? '' : (results[i].sex === 0 ? 'female' : 'male')
+                let sex = +results[i].sex < 0 ? '' : (+results[i].sex === 0 ? 'female' : 'male')
 
                 $('#list tbody').append(`
                     <tr id="user-${results[i].userid}" class="user-search ${sex}">
