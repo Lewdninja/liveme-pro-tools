@@ -73,9 +73,9 @@ function drawEntry () {
                 <h3><span>Latest Replay:</span> ${d1}</h3>
                 <h4><span>Last Viewed:</span> ${d2}</h4>
                 <div id="user-${list[index].uid}-buttons" class="buttons">
-                    <a class="button mini view" onClick="showUser('${list[index].uid}')">${list[index].counts.replays.toLocaleString('en-US')} replays</a>
-                    <a class="button mini fans" onClick="showFollowers('${list[index].uid}')">${list[index].counts.followers.toLocaleString('en-US')} Fans</a>
-                    <a class="button mini following" onClick="showFollowing('${list[index].uid}')">Following ${list[index].counts.followings.toLocaleString('en-US')}</a>
+                    <a class="button mini view" onClick="showUser('${list[index].uid}')">${list[index].counts.replays} replays</a>
+                    <a class="button mini fans" onClick="showFollowers('${list[index].uid}')">${list[index].counts.followers} Fans</a>
+                    <a class="button mini following" onClick="showFollowing('${list[index].uid}')">Following ${list[index].counts.followings}</a>
                 </div>
             </td>
 

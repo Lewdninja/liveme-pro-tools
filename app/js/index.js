@@ -1007,9 +1007,9 @@ function performHashtagSearch () {
                             <h4 class="play" onClick="playVideo('${results[i].vid}')" title="Watch Replay"><i class="icon icon-play"></i> ${results[i].title}</h4>
 
                             <h5 class="subtitle">
-                                Views: ${results[i].playnumber.toLocaleString('en-US')}
+                                Views: ${results[i].playnumber}
                                 &nbsp;
-                                Likes: ${results[i].likenum.toLocaleString('en-US')}
+                                Likes: ${results[i].likenum}
                                 &nbsp;
                                 Length: ${formatDuration(parseInt(results[i].videolength) * 1000)}
                                 &nbsp;
@@ -1038,9 +1038,9 @@ function performHashtagSearch () {
                         if (user === undefined) return
                         if (user === null) return
 
-                        $('#user-' + user.user_info.uid + ' td.details a.replays').html(`${user.count_info.video_count.toLocaleString('en-US')} Replays`)
-                        $('#user-' + user.user_info.uid + ' td.details a.followings').html(`Following ${user.count_info.following_count.toLocaleString('en-US')}`)
-                        $('#user-' + user.user_info.uid + ' td.details a.followers').html(`${user.count_info.follower_count.toLocaleString('en-US')} Fans`)
+                        $('#user-' + user.user_info.uid + ' td.details a.replays').html(`${user.count_info.video_count} Replays`)
+                        $('#user-' + user.user_info.uid + ' td.details a.followings').html(`Following ${user.count_info.following_count}`)
+                        $('#user-' + user.user_info.uid + ' td.details a.followers').html(`${user.count_info.follower_count} Fans`)
 
                         $('#user-' + user.user_info.uid + ' td.details h5.userid').html(`ID: <span>${user.user_info.uid}<a class="button icon-only" title="Copy to Clipboard" onClick="copyToClipboard('${user.user_info.uid}')"><i class="icon icon-copy"></i></a></span>`)
                         $('#user-' + user.user_info.uid + ' td.details h5.shortid').html(`Short ID: <span>${user.user_info.short_id}<a class="button icon-only" title="Copy to Clipboard" onClick="copyToClipboard('${user.user_info.short_id}')"><i class="icon icon-copy"></i></a></span>`)
