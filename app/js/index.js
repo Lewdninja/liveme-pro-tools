@@ -397,14 +397,37 @@ function preSearch (q) {
     doSearch()
 }
 
-function AddToBookmarks () {
+function AddToBookmarks (user = {}) {
+    const currentUserTmp = currentUser
+    if (user.uid !== undefined) {
+        user = JSON.parse($('#user-' + user.uid).data('json'))
+        currentUser = {
+            uid: user.user_info.uid,
+            shortid: user.user_info.short_id,
+            signature: user.user_info.usign,
+            sex: +user.user_info.sex < 0 ? '' : (+user.user_info.sex === 0 ? 'female' : 'male'),
+            face: user.user_info.face,
+            nickname: user.user_info.uname,
+            counts: {
+                replays: user.count_info.video_count,
+                friends: user.count_info.friends_count,
+                followers: user.count_info.follower_count,
+                followings: user.count_info.following_count
+            },
+            last_viewed: Math.floor((new Date()).getTime() / 1000),
+            newest_replay: 0
+        }
+    }
     if (DataManager.isBookmarked(currentUser) === true) {
         DataManager.removeBookmark(currentUser)
-        $('a.bookmark').attr('title', 'Add to Bookmarks').html('<i class="icon icon-star-empty"></i>')
+        $('a.bookmark:not(.hashtag)').attr('title', 'Add to Bookmarks').html('<i class="icon icon-star-empty"></i>')
+        $('#user-' + currentUser.uid).find('a.bookmark').attr('title', 'Add to Bookmarks').html('<i class="icon icon-star-empty"></i>')
     } else {
         DataManager.addBookmark(currentUser)
-        $('a.bookmark').attr('title', 'Remove from Bookmarks').html('<i class="icon icon-star-full bright yellow"></i>')
+        $('a.bookmark:not(.hashtag)').attr('title', 'Remove from Bookmarks').html('<i class="icon icon-star-full bright yellow"></i>')
+        $('#user-' + currentUser.uid).find('a.bookmark').attr('title', 'Remove from Bookmarks').html('<i class="icon icon-star-full bright yellow"></i>')
     }
+    currentUser = currentUserTmp
 }
 
 function backupData () {
@@ -920,14 +943,14 @@ function performUsernameSearch () {
             setTimeout(function () { scrollBusy = false }, 250)
 
             for (var i = 0; i < results.length; i++) {
-                let bookmarked = DataManager.isBookmarked(results[i].userid) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
-                let viewed = DataManager.wasProfileViewed(results[i].userid)
-                    ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].userid)) + '"></i>'
+                let bookmarked = DataManager.isBookmarked({ uid: results[i].user_id }) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
+                let viewed = DataManager.wasProfileViewed(results[i].user_id)
+                    ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].user_id)) + '"></i>'
                     : '<i class="icon icon-eye dim"></i>'
                 let sex = +results[i].sex < 0 ? '' : (+results[i].sex === 0 ? 'female' : 'male')
 
                 $('#list tbody').append(`
-                    <tr id="user-${results[i].userid}" class="user-search ${sex}">
+                    <tr id="user-${results[i].user_id}" class="user-search ${sex}">
                         <td width="128" style="text-align: center;">
                             <img src="${results[i].face}" style="height: 128px; width: 128px;" onError="$(this).hide()">
                         </td>
@@ -943,9 +966,9 @@ function performUsernameSearch () {
                             <div class="bookmarked">${bookmarked}</div>
                             <div class="viewed">${viewed}</div>
 
-                            <a class="button replays" onClick="showUser('${results[i].userid}')">0 Replays</a>
-                            <a class="button followings" onClick="showFollowing('${results[i].userid}')">Following 0</a>
-                            <a class="button followers" onClick="showFollowers('${results[i].userid}')">0 Fans</a>
+                            <a class="button replays" onClick="showUser('${results[i].user_id}')">0 Replays</a>
+                            <a class="button followings" onClick="showFollowing('${results[i].user_id}')">Following 0</a>
+                            <a class="button followers" onClick="showFollowers('${results[i].user_id}')">0 Fans</a>
 
                         </td>
                     </tr>
@@ -989,7 +1012,7 @@ function performHashtagSearch () {
             setTimeout(function () { scrollBusy = false }, 250)
 
             for (var i = 0; i < results.length; i++) {
-                let bookmarked = DataManager.isBookmarked(results[i].userid) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
+                let bookmarked = DataManager.isBookmarked({ uid: results[i].userid }) ? '<i class="icon icon-star-full bright yellow"></i>' : '<i class="icon icon-star-full dim"></i>'
                 let viewed = DataManager.wasProfileViewed(results[i].userid)
                     ? '<i class="icon icon-eye bright blue" title="Last viewed ' + prettydate.format(DataManager.wasProfileViewed(results[i].userid)) + '"></i>'
                     : '<i class="icon icon-eye dim"></i>'
@@ -997,6 +1020,11 @@ function performHashtagSearch () {
 
                 let dt = new Date(results[i].vtime * 1000)
                 let ds = (dt.getMonth() + 1) + '-' + dt.getDate() + '-' + dt.getFullYear() + ' ' + (dt.getHours() < 10 ? '0' : '') + dt.getHours() + ':' + (dt.getMinutes() < 10 ? '0' : '') + dt.getMinutes()
+
+                let bookmarkButton = `<a href="#" class="button icon-only bookmark hashtag" onClick="AddToBookmarks({ uid: '${results[i].userid.trim()}' })" title="Add to Bookmarks"><i class="icon icon-star-empty"></i></a>`
+                if (DataManager.isBookmarked({ uid: results[i].userid }) === true) {
+                    bookmarkButton = `<a href="#" class="button icon-only bookmark hashtag" onClick="AddToBookmarks({ uid: '${results[i].userid.trim()}' })" title="Remove from Bookmarks"><i class="icon icon-star-full bright yellow"></i></a>`
+                }
 
                 $('#list tbody').append(`
                     <tr id="user-${results[i].userid}" class="user-search ${sex}">
@@ -1007,6 +1035,8 @@ function performHashtagSearch () {
                             <h4 class="play" onClick="playVideo('${results[i].vid}')" title="Watch Replay"><i class="icon icon-play"></i> ${results[i].title}</h4>
 
                             <h5 class="subtitle">
+                                ${bookmarkButton}
+                                &nbsp;
                                 Views: ${results[i].playnumber}
                                 &nbsp;
                                 Likes: ${results[i].likenum}
@@ -1037,6 +1067,8 @@ function performHashtagSearch () {
                     .then(user => {
                         if (user === undefined) return
                         if (user === null) return
+
+                        $('#user-' + user.user_info.uid).data('json', JSON.stringify(user))
 
                         $('#user-' + user.user_info.uid + ' td.details a.replays').html(`${user.count_info.video_count} Replays`)
                         $('#user-' + user.user_info.uid + ' td.details a.followings').html(`Following ${user.count_info.following_count}`)

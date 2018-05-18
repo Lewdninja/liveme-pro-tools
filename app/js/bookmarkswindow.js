@@ -56,12 +56,10 @@ function redrawList () {
 }
 
 function drawEntry () {
-    if (index === max) return
-
+    if (index === max || Object.keys(list[index]).length <= 1) return
     let d1 = prettydate.format(new Date(list[index].newest_replay * 1000))
     let d2 = prettydate.format(new Date(list[index].last_viewed * 1000))
     let isNew = list[index].newest_replay > list[index].last_viewed ? 'new' : 'not-new'
-
     $('#bookmark-list').append(`
         <tr id="entry-${list[index].uid}" data-viewed="${list[index].last_viewed}" class="${isNew}">
             <td width="64">
